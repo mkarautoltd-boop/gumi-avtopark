@@ -274,6 +274,11 @@ body.loading main{pointer-events:none;opacity:.75}
 @keyframes ld{to{background-position:-200% 0}}
 .spin{width:34px;height:34px;margin:0 auto 12px;border-radius:50%;border:4px solid var(--soft2);border-top-color:var(--lime);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.tabbar:has(.tabbar-in:empty){display:none}
+.ubtn{border:1px solid var(--chipbd);background:var(--chip);color:var(--hdrsub);border-radius:20px;padding:6px 12px;min-height:36px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.login{max-width:420px;margin:24px auto 0;padding:22px 18px;display:flex;flex-direction:column}
+.login .lico{font-size:44px;text-align:center;margin-bottom:6px}
+.login .btn{margin-top:18px}
 .urow{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .ulink{font-size:12px;color:var(--mut);word-break:break-all;margin-top:2px;user-select:all;-webkit-user-select:all}
 .ubtns{display:flex;flex-direction:column;gap:6px}
@@ -299,7 +304,7 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 
 <script>
 /* ===== ДЕМО: примерна база в паметта (в истинското приложение това е Google Sheets) ===== */
-const USER = { name: '', role: '' };
+const USER = { name: '', role: '', username: '', hasPass: false };
 let TARGET = 'winter';   // сезонът, към който сменяме сега — идва от сървъра
 const SETN = { summer: 'Летни', winter: 'Зимни', all: 'Всесезонни' };
 const LIMIT = { summer: 1.6, winter: 4, all: 4 };
@@ -387,7 +392,7 @@ function freeCard(f) {
     <span class="mut">${f.rims ? '🛞 на джанти' : 'без джанти'}${f.kmRun ? ' · ' + kmFmt(f.kmRun) : ' · нови'}</span>
     <span class="dots4" aria-label="${n} гуми">${[0, 1, 2, 3].map(i => `<i class="${i < n ? '' : 'none'}"></i>`).join('')}<b style="margin-left:6px;font-size:13px">${n} бр.</b></span>
     <span class="mut">${f.from ? 'от ' + plateHtml(f.from) : esc(f.note || 'добавени ръчно')}</span>
-    ${isAdmin() ? `<span class="row2"><button onclick="go('assign',{fid:'${f.id}'})">Дай на кола</button><button class="${S.confirmDrop === f.id ? 'cfm' : 'red'}" onclick="dropFree('${f.id}')">${S.confirmDrop === f.id ? '✔ Потвърди' : 'Премахни'}</button></span>` : ''}</div>`;
+    ${canEdit() ? `<span class="row2"><button onclick="go('assign',{fid:'${f.id}'})">Дай на кола</button><button class="${S.confirmDrop === f.id ? 'cfm' : 'red'}" onclick="dropFree('${f.id}')">${S.confirmDrop === f.id ? '✔ Потвърди' : 'Премахни'}</button></span>` : ''}</div>`;
 }
 function orderList() {
   const m = {};
@@ -445,9 +450,9 @@ async function api(a, d = {}) {
     try { r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ t: TOKEN, a, d }) }); }
     catch (e) { throw new Error('Няма връзка със сървъра. Провери интернета и опитай пак.'); }
     try { j = await r.json(); } catch (e) { throw new Error('Сървърът върна грешен отговор. Провери API_URL и внедряването (Достъп: Всеки).'); }
-    if (!j.ok) throw new Error(j.error || 'Грешка');
+    if (!j.ok) { if (j.auth) { forgetLogin(); } const er = new Error(j.error || 'Грешка'); er.auth = !!j.auth; throw er; }
     if (j.db) { DB = j.db; TARGET = DB.target || TARGET; ROT_KM = DB.rotKm || ROT_KM; }
-    if (j.me) { USER.name = j.me.name; USER.role = j.me.role; }
+    if (j.me) Object.assign(USER, j.me);
     return j.res;
   } finally { document.body.classList.remove('loading'); }
 }
@@ -459,11 +464,13 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const eur = n => (n === '' || n == null) ? '—' : Number(n).toFixed(2) + ' €';
 const fmt = d => String(d).split('-').reverse().join('.');
 const isAdmin = () => USER.role === 'admin';
+const canEdit = () => USER.role === 'admin' || USER.role === 'staff';
+const ROLE = { admin: 'Администратор', staff: 'Служител', driver: 'Шофьор на бус' };
 function toast(msg, err) { const t = $('toast'); t.textContent = msg; t.className = 'toast' + (err ? ' err' : ''); t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => t.hidden = true, 2800); }
 function go(view, extra) { Object.assign(S, extra || {}, { view }); render(); window.scrollTo(0, 0); }
 
 function header(title, back) {
-  let h = `<div class="top">${back ? `<button class="back" aria-label="Назад" onclick="go('${back}')">‹</button>` : ''}<h1>${esc(title)}</h1><small>${esc(USER.name)}</small></div>`;
+  let h = `<div class="top">${back ? `<button class="back" aria-label="Назад" onclick="go('${back}')">‹</button>` : ''}<h1>${esc(title)}</h1><button class="ubtn" onclick="go('profile')" aria-label="Профил">👤 ${esc(USER.name)}</button></div>`;
   if (!back) {
     const tot = DB.cars.length || 1, win = DB.cars.filter(c => c.allSeason || c.mounted === TARGET).length;
     const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).length, LG = legalInfo();
@@ -525,10 +532,10 @@ const V = {
       ['🛞', 'Свободни гуми', "go('addFree')", 'var(--teal)'],
       ['🧾', 'Разход', "go('expense',{sel:''})", 'var(--bad)']
     ];
-    let h = isAdmin() ? `<div class="tiles" style="grid-template-columns:repeat(4,1fr)">${tiles.map(t => `<button class="tile" style="background-color:${t[3]}" onclick="${t[2]}"><i>${t[0]}</i>${t[1]}</button>`).join('')}</div>` : '';
+    let h = canEdit() ? `<div class="tiles" style="grid-template-columns:repeat(4,1fr)">${tiles.map(t => `<button class="tile" style="background-color:${t[3]}" onclick="${t[2]}"><i>${t[0]}</i>${t[1]}</button>`).join('')}</div>` : '';
     h = legalBanner() + h;
     const todo = DB.cars.filter(isTodo);
-    if (todo.length && isAdmin()) h += `<h2>Въведи гумите (${todo.length})</h2><div class="mut" style="margin:-4px 0 10px">Отвори колата, сложи размера и въведи гумите, които има.</div>`
+    if (todo.length && canEdit()) h += `<h2>Въведи гумите (${todo.length})</h2><div class="mut" style="margin:-4px 0 10px">Отвори колата, сложи размера и въведи гумите, които има.</div>`
       + carGrid(todo.slice(0, 6), c => carTile(c, c.size || 'няма размер')) + (todo.length > 6 ? `<button class="btn sec" style="margin-top:0" onclick="go('cars',{tab:'todo',size:'',q:''})">Виж всички ${todo.length}</button>` : '');
     h += `<h2>Гуми за купуване</h2>` + orderCard();
     h += `<h2>Коли по размер гуми</h2>` + sizesCard();
@@ -546,7 +553,7 @@ const V = {
 
   trips() {
     header('Натоварване', 'home');
-    let h = isAdmin() ? `<button class="btn" style="margin:0 0 12px" onclick="go('newTrip',{picked:[]})">+ Нов рейс</button>` : '';
+    let h = canEdit() ? `<button class="btn" style="margin:0 0 12px" onclick="go('newTrip',{picked:[]})">+ Нов рейс</button>` : '';
     const open = DB.trips.filter(t => !tripDone(t)), done = DB.trips.filter(tripDone);
     h += open.length ? tripGrid(open) : '<div class="card mut">Няма активни рейсове.</div>';
     if (done.length) h += '<h2>Приключени</h2>' + tripGrid(done);
@@ -619,7 +626,7 @@ const V = {
     const q = S.q.toLowerCase();
     const f = { all: () => true, todo: isTodo, wait: c => !c.allSeason && c.mounted !== TARGET, low: c => issues(c).length, rot: c => rotDue(c) != null };
     const list = DB.cars.filter(f[S.tab]).filter(c => !S.size || c.size === S.size).filter(c => !q || [c.plate, c.model, c.driver].join(' ').toLowerCase().includes(q)).sort((a, b) => a.plate.localeCompare(b.plate));
-    let h = (isAdmin() ? `<div class="row" style="margin-bottom:12px"><button class="btn" style="margin:0" onclick="go('newCar')">+ Кола</button><button class="btn sec" style="margin:0" onclick="refreshRoad()">🔄 Обнови</button></div><div class="mut" style="margin:-4px 0 12px">Колите от пътната книжка идват сами (🔄 Обнови ги взима веднага). С „+ Кола“ добавяш само коли, които ги няма там.</div>` : '') + `<input class="search" id="f_q" placeholder="Търси по номер, модел, шофьор…" value="${esc(S.q)}" oninput="S.q=this.value;render();$('f_q').focus();$('f_q').setSelectionRange(this.value.length,this.value.length)">
+    let h = (canEdit() ? `<div class="row" style="margin-bottom:12px"><button class="btn" style="margin:0" onclick="go('newCar')">+ Кола</button><button class="btn sec" style="margin:0" onclick="refreshRoad()">🔄 Обнови</button></div><div class="mut" style="margin:-4px 0 12px">Колите от пътната книжка идват сами (🔄 Обнови ги взима веднага). С „+ Кола“ добавяш само коли, които ги няма там.</div>` : '') + `<input class="search" id="f_q" placeholder="Търси по номер, модел, шофьор…" value="${esc(S.q)}" oninput="S.q=this.value;render();$('f_q').focus();$('f_q').setSelectionRange(this.value.length,this.value.length)">
       <label for="f_sz" style="margin-top:0">Размер</label><select id="f_sz" style="margin-bottom:4px" onchange="S.size=this.value;render()"><option value="">Всички размери</option>${sizeList().map(x => `<option value="${esc(x.size)}" ${S.size === x.size ? 'selected' : ''}>${esc(x.size)} (${x.cars} коли)</option>`).join('')}</select>
       <div class="tabs">${[['all', 'Всички']].concat(DB.cars.some(isTodo) ? [['todo', 'Нови']] : [], [['wait', 'Смяна'], ['low', 'Проблеми'], ['rot', 'Ротация']]).map(t => `<button class="${S.tab === t[0] ? 'on' : ''}" onclick="S.tab='${t[0]}';render()">${t[1]}</button>`).join('')}</div>
       <div class="mut" style="margin-bottom:8px">${list.length} ${list.length === 1 ? 'кола' : 'коли'}${S.size ? ' с размер ' + esc(S.size) : ''}</div>`;
@@ -639,20 +646,20 @@ const V = {
     const setCard = k => {
       const s = c.sets[k], ico = ICO[k];
       if (!s) return `<div class="set miss"><div class="hd"><span>${ico} ${SETN[k]}</span><span class="badge b-bad">Няма комплект</span></div>
-        <div class="mut">Трябват 4 гуми ${esc(c.size)}</div>${isAdmin() ? `<div class="setbtns"><button onclick="go('newTires',{nk:'${k}'})">+ Добави ${SETN[k].toLowerCase()} гуми</button></div>` : ''}</div>`;
+        <div class="mut">Трябват 4 гуми ${esc(c.size)}</div>${canEdit() ? `<div class="setbtns"><button onclick="go('newTires',{nk:'${k}'})">+ Добави ${SETN[k].toLowerCase()} гуми</button></div>` : ''}</div>`;
       const st = treadState(s, k), w = Math.min(100, Math.round(numv(s.tread) / 9 * 100));
       const col = st === 'bad' ? 'var(--bad)' : st === 'warn' ? 'var(--warn)' : (k === 'winter' ? 'var(--win)' : 'var(--org)');
       const n = need(s), hv = have(s);
       return `<div class="set ${k === c.mounted ? 'mnt' : ''} ${k === 'summer' ? 'sum' : ''}"><div class="hd"><span>${ico} ${SETN[k]} · ${hv}/4 бр.</span>${where(k)}</div>
         <div class="mut">${esc(s.size)} · ${esc(s.brand)} · DOT ${s.dot} ${ageOf(s) >= 6 ? `<b style="color:${ageOf(s) >= 10 ? 'var(--bad)' : 'var(--warn)'}">(${ageOf(s)} г. — стари)</b>` : `(${ageOf(s)} г.)`}</div>
-        <div class="setmeta"><button class="rimb ${s.rims ? 'on' : ''}" ${isAdmin() ? '' : 'disabled'} onclick="toggleRims('${c.id}','${k}')">${s.rims ? '🛞 На джанти' : '○ Без джанти'}</button><span>🛣️ Изминати <b>${kmFmt(kmOf(c, k))}</b></span></div>
-        ${(() => { const l = rotLeft(c, k), col = l < 0 ? 'var(--bad)' : l <= 1000 ? 'var(--warn)' : 'var(--mut)'; return `<div class="setmeta"><span>🔄 Ротация: <b style="color:${col}">${rotTxt(l)}</b>${k === c.mounted ? '' : ' каране'}</span>${isAdmin() ? `<button class="rimb ${S.confirmRot === c.id + k ? 'cfmr' : ''}" onclick="rotate('${c.id}','${k}')">${S.confirmRot === c.id + k ? '✔ Потвърди ротацията' : 'Направих ротация'}</button>` : ''}</div>`; })()}
+        <div class="setmeta"><button class="rimb ${s.rims ? 'on' : ''}" ${canEdit() ? '' : 'disabled'} onclick="toggleRims('${c.id}','${k}')">${s.rims ? '🛞 На джанти' : '○ Без джанти'}</button><span>🛣️ Изминати <b>${kmFmt(kmOf(c, k))}</b></span></div>
+        ${(() => { const l = rotLeft(c, k), col = l < 0 ? 'var(--bad)' : l <= 1000 ? 'var(--warn)' : 'var(--mut)'; return `<div class="setmeta"><span>🔄 Ротация: <b style="color:${col}">${rotTxt(l)}</b>${k === c.mounted ? '' : ' каране'}</span>${canEdit() ? `<button class="rimb ${S.confirmRot === c.id + k ? 'cfmr' : ''}" onclick="rotate('${c.id}','${k}')">${S.confirmRot === c.id + k ? '✔ Потвърди ротацията' : 'Направих ротация'}</button>` : ''}</div>`; })()}
         <div class="tread"><i style="width:${w}%;background:${col}"></i></div>
         <div class="mut">Протектор <b style="color:${col}">${s.tread} мм</b> · лимит ${LIMIT[k]} мм</div>
-        <div class="axle">${s.tires.map((t, i) => `<button class="tire ${t}" style="grid-column:${i % 2 ? 3 : 1};grid-row:${i < 2 ? 1 : 2}" aria-label="${POSF[i]}: ${TST[t]}" ${isAdmin() ? '' : 'disabled'} onclick="cycleTire('${c.id}','${k}',${i})">${POS[i]}<span>${TST[t]}</span></button>`).join('')}<div class="body">${CAR_SVG}</div></div>
-        ${n && isAdmin() ? `<div class="setbtns"><button onclick="go('newTires',{nk:'${k}'})">+ Нови гуми (${n} бр.)</button></div>` : ''}</div>`;
+        <div class="axle">${s.tires.map((t, i) => `<button class="tire ${t}" style="grid-column:${i % 2 ? 3 : 1};grid-row:${i < 2 ? 1 : 2}" aria-label="${POSF[i]}: ${TST[t]}" ${canEdit() ? '' : 'disabled'} onclick="cycleTire('${c.id}','${k}',${i})">${POS[i]}<span>${TST[t]}</span></button>`).join('')}<div class="body">${CAR_SVG}</div></div>
+        ${n && canEdit() ? `<div class="setbtns"><button onclick="go('newTires',{nk:'${k}'})">+ Нови гуми (${n} бр.)</button></div>` : ''}</div>`;
     };
-    const editCard = isAdmin() ? `<div class="card" style="display:flex;flex-direction:column;gap:2px"><b style="font-size:14px">Данни за колата</b>
+    const editCard = canEdit() ? `<div class="card" style="display:flex;flex-direction:column;gap:2px"><b style="font-size:14px">Данни за колата</b>
         <div class="row"><div><label for="e_size">Размер на гумите</label><input id="e_size" list="sizes3" value="${esc(c.size)}" placeholder="напр. 205/55 R16"></div><div><label for="e_srv">Сервиз</label><select id="e_srv">${opts(DB.services, c.service)}</select></div></div>
         ${c.allSeason ? '' : `<label for="e_mnt">Кои гуми са на колата сега</label><select id="e_mnt"><option value="summer" ${c.mounted === 'summer' ? 'selected' : ''}>Летни</option><option value="winter" ${c.mounted === 'winter' ? 'selected' : ''}>Зимни</option></select>`}
         ${c.manual ? `<div class="row"><div><label for="e_model">Модел</label><input id="e_model" value="${esc(c.model)}"></div><div><label for="e_drv">Шофьор</label><input id="e_drv" value="${esc(c.driver)}"></div></div>` : '<div class="mut" style="margin-top:6px">Модел, шофьор и км идват от пътната книжка.</div>'}
@@ -660,13 +667,13 @@ const V = {
         <button class="btn" style="margin-top:10px" onclick="saveCarEdit('${c.id}')">Запази данните</button></div>` : '';
     let h = `<div class="card hero">${plateHtml(c.plate, true)}<div class="mut">${esc(c.model)} · ${esc(c.size)}</div><div class="tb" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${carBadges(c).replace('class="bdg"', 'style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center"')}</div></div>
       <div class="card"><div class="kv"><span>Модел</span><b>${esc(c.model)}</b></div><div class="kv"><span>Размер</span><b>${esc(c.size)}</b></div><div class="kv"><span>${kmMan(c) ? 'Км (въведени ръчно)' : 'Км по пътната книжка'}</span><b>${(c.odo || c.km || 0).toLocaleString('bg-BG')}</b></div><div class="kv"><span>Шофьор</span><b>${esc(c.driver)}</b></div><div class="kv"><span>Сервиз</span><b>${esc(c.service)}</b></div><div class="kv"><span>Км при последна смяна</span><b>${(c.km || 0).toLocaleString('bg-BG')}</b></div></div>
-      ${kmMan(c) ? `<div class="calc">${c.manual ? 'Колата не е в пътната книжка.' : 'В пътната книжка още няма км за тази кола.'} Км се пишат при смяна${isAdmin() ? ' или тук:' : '.'}${isAdmin() ? `<div class="row" style="margin-top:8px"><input id="f_upkm" inputmode="numeric" placeholder="км от таблото"><button class="btn" style="margin:0" onclick="updateKm('${c.id}')">Обнови км</button></div>` : ''}</div>` : ''}
+      ${kmMan(c) ? `<div class="calc">${c.manual ? 'Колата не е в пътната книжка.' : 'В пътната книжка още няма км за тази кола.'} Км се пишат при смяна${canEdit() ? ' или тук:' : '.'}${canEdit() ? `<div class="row" style="margin-top:8px"><input id="f_upkm" inputmode="numeric" placeholder="км от таблото"><button class="btn" style="margin:0" onclick="updateKm('${c.id}')">Обнови км</button></div>` : ''}</div>` : ''}
       ${!c.size ? editCard : ''}
       ${c.allSeason ? setCard('all') : setCard(c.mounted) + setCard(other(c.mounted))}
-      ${isAdmin() ? `<div class="card" style="display:flex;flex-direction:column;gap:8px"><b style="font-size:14px">Вид гуми</b><div class="tabs" style="margin:0">${[[false, '☀️❄️ Летни + зимни'], [true, '🌦️ Всесезонни']].map(([v, l]) => `<button class="${!!c.allSeason === v ? 'on' : ''}" onclick="setAllSeason('${c.id}',${v})">${l}</button>`).join('')}</div>${S.confirmAS === c.id ? `<div class="calc" style="background:var(--warnbg);color:var(--warntx)">Сегашните гуми отиват в свободни. <button class="btn cfm" style="margin-top:8px" onclick="setAllSeason('${c.id}',${!c.allSeason},1)">✔ Потвърди</button></div>` : ''}</div>` : ''}
+      ${canEdit() ? `<div class="card" style="display:flex;flex-direction:column;gap:8px"><b style="font-size:14px">Вид гуми</b><div class="tabs" style="margin:0">${[[false, '☀️❄️ Летни + зимни'], [true, '🌦️ Всесезонни']].map(([v, l]) => `<button class="${!!c.allSeason === v ? 'on' : ''}" onclick="setAllSeason('${c.id}',${v})">${l}</button>`).join('')}</div>${S.confirmAS === c.id ? `<div class="calc" style="background:var(--warnbg);color:var(--warntx)">Сегашните гуми отиват в свободни. <button class="btn cfm" style="margin-top:8px" onclick="setAllSeason('${c.id}',${!c.allSeason},1)">✔ Потвърди</button></div>` : ''}</div>` : ''}
       ${c.size ? editCard : ''}
-      ${isAdmin() ? '<div class="mut" style="margin:-2px 0 6px">Натисни гума, за да смениш състоянието: годна → за смяна → брак.</div>' : ''}`;
-    if (isAdmin()) h += `<div class="row"><button class="btn" style="background:var(--org);margin-top:4px" onclick="go('change',{fromTrip:''})">🔧 Смяна</button><button class="btn sec" style="margin-top:4px" onclick="go('expense')">🧾 Разход</button></div>
+      ${canEdit() ? '<div class="mut" style="margin:-2px 0 6px">Натисни гума, за да смениш състоянието: годна → за смяна → брак.</div>' : ''}`;
+    if (canEdit()) h += `<div class="row"><button class="btn" style="background:var(--org);margin-top:4px" onclick="go('change',{fromTrip:''})">🔧 Смяна</button><button class="btn sec" style="margin-top:4px" onclick="go('expense')">🧾 Разход</button></div>
       ${c.manual ? `<button class="btn ${S.confirmRm === c.id ? 'cfm' : 'sec'}" style="margin-top:8px;font-size:14px" onclick="removeCar('${c.id}')">${S.confirmRm === c.id ? 'Натисни пак: гумите отиват в свободни' : 'Премахни колата'}</button>` : ''}`;
     const hs = DB.history.filter(x => x.carId === c.id).sort((a, b) => b.date.localeCompare(a.date));
     const tot = hs.reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0);
@@ -694,12 +701,24 @@ const V = {
       <div class="tabs">${[['winter', '❄️ Зимни ' + w.length], ['summer', '☀️ Летни ' + s.length], ['free', '📦 Свободни ' + fr.length]].map(t => `<button class="${tab === t[0] ? 'on' : ''}" onclick="S.stab='${t[0]}';render()">${t[1]}</button>`).join('')}</div>`;
     if (tab === 'free') {
       h += `<div class="mut" style="margin-bottom:8px">Гуми без кола: от махнати коли или купени резервни. Остават тук, докато не ги дадеш на кола или не ги премахнеш.</div>`;
-      if (isAdmin()) h += `<button class="btn" style="margin:0 0 12px;background:var(--teal)" onclick="go('addFree')">+ Добави свободни гуми</button>`;
+      if (canEdit()) h += `<button class="btn" style="margin:0 0 12px;background:var(--teal)" onclick="go('addFree')">+ Добави свободни гуми</button>`;
       return h + (fr.length ? `<div class="szgrid">${fr.map(freeCard).join('')}</div>` : '<div class="card mut">Няма свободни гуми.</div>');
     }
     const L = tab === 'winter' ? w : s;
     h += `<div class="mut" style="margin-bottom:6px">Гумите са надписани с номера на колата, затова се търсят по номер.</div>`;
     return h + carGrid(L.sort((a, b) => a.plate.localeCompare(b.plate)), c => { const x = setIssue(c, tab); return carTile(c, `${c.sets[tab].brand} · ${have(c.sets[tab])}/4 бр. · ${c.sets[tab].tread} мм · ${c.sets[tab].rims ? 'джанти' : 'без джанти'}`, x ? `<span class="badge b-${x.lvl}">${x.txt}</span>` : '<span class="badge b-ok">годни</span>'); });
+  },
+
+  profile() {
+    header('Профил', 'home');
+    return `<div class="card"><div class="kv"><span>Име</span><b>${esc(USER.name)}</b></div><div class="kv"><span>Потребител</span><b>${esc(USER.username || '—')}</b></div><div class="kv"><span>Права</span><b>${ROLE[USER.role]}</b></div></div>
+      <h2>${USER.hasPass ? 'Смяна на парола' : 'Задай потребител и парола'}</h2><div class="card">
+      ${USER.hasPass ? '<label for="p_old">Сегашна парола</label><input id="p_old" type="password" autocomplete="current-password">' : '<div class="calc">Още нямаш парола. Избери потребителско име и парола — с тях ще влизаш оттук нататък.</div>'}
+      <label for="p_user">Потребителско име</label><input id="p_user" value="${esc(USER.username || '')}" autocapitalize="none" autocorrect="off" autocomplete="username" placeholder="напр. ivan">
+      <label for="p_new">Нова парола</label><input id="p_new" type="password" autocomplete="new-password">
+      <label for="p_new2">Повтори новата парола</label><input id="p_new2" type="password" autocomplete="new-password">
+      <button class="btn" onclick="savePass()">Запази</button></div>
+      <button class="btn sec" onclick="logout()">Изход</button>`;
   },
 
   settings() {
@@ -716,7 +735,7 @@ const V = {
       <button class="btn sec" style="margin-top:8px" onclick="S.set.extras.push('');render()">+ Добави</button></div>`;
     h += `<button class="btn" onclick="saveSettings()">Запази настройките</button>`;
     if (!S.users) api('users').then(u => { S.users = u; if (S.view === 'settings') $('usersBox').innerHTML = usersHtml(); }).catch(e => toast(e.message, 1));
-    return h + `<h2>Потребители и линкове за вход</h2><div class="card" id="usersBox">${usersHtml()}</div>`;
+    return h + `<h2>Потребители</h2><div class="card" id="usersBox">${usersHtml()}</div>`;
   },
 
   newCar() {
@@ -842,12 +861,12 @@ const TABICO = {
   report: '<path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/>'
 };
 const TABEMO = { home: '🏠', trips: '🚚', cars: '🚗', store: '🛞', report: '📊' };
-const TABOF = { settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
+const TABOF = { profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
 function renderTabbar() {
   const openTrips = DB.trips.filter(t => !tripDone(t)).length;
   const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).length;
   const t = [['home', 'Начало'], ['trips', 'Рейсове', openTrips], ['cars', 'Коли', bad], ['store', 'Склад']];
-  if (isAdmin()) t.push(['report', 'Справка']);
+  if (canEdit()) t.push(['report', 'Справка']);
   const cur = TABOF[S.view] || 'home';
   $('tabbar').innerHTML = t.map(([k, l, n]) => `<button onclick="go('${k}',{size:'',q:'',tab:'all'})" ${cur === k ? 'aria-current="page"' : ''}><span class="temo" aria-hidden="true">${TABEMO[k]}</span>${l}${n ? `<i>${n}</i>` : ''}</button>`).join('');
 }
@@ -907,7 +926,7 @@ function saveCarEdit(carId) {
 }
 async function refreshRoad() { try { await api('refresh'); toast('Колите са обновени от пътната книжка ✔'); render(); } catch (e) { toast(e.message, 1); } }async function advance(tripId, carId) { try { await api('advance', { tripId, carId }); toast('Отбелязано ✔'); render(); } catch (e) { toast(e.message, 1); } }
 function doChange(tripId, carId) {
-  if (!isAdmin()) { advanceChanged(tripId, carId); return; }
+  if (!canEdit()) { advanceChanged(tripId, carId); return; }
   go('change', { sel: carId, fromTrip: tripId, trip: tripId });
 }
 async function advanceChanged(tripId, carId) {
@@ -954,18 +973,55 @@ function saveExpense() { if (!S.sel) return toast('Избери кола', 1); b
 
 function usersHtml() {
   if (!S.users) return '<div class="mut">Зареждане…</div>';
-  const base = location.href.split('?')[0].split('#')[0];
-  return S.users.map(u => { const link = base + '?t=' + u.token; return `<div class="urow"><div style="flex:1;min-width:0"><b>${esc(u.name)}</b> <span class="mut">${u.role === 'admin' ? 'администратор' : 'шофьор на бус'}${u.active ? '' : ' · спрян'}</span><div class="ulink">${esc(link)}</div></div>
-    <div class="ubtns"><button onclick="copyLink('${esc(link)}')">Копирай</button>${u.token === TOKEN ? '' : `<button class="sec" onclick="setUser('${esc(u.token)}',${!u.active})">${u.active ? 'Спри' : 'Пусни'}</button>`}</div></div>`; }).join('')
-    + `<div class="row" style="margin-top:12px"><input id="u_name" placeholder="Име, напр. Стефан"><select id="u_role"><option value="driver">Шофьор на бус</option><option value="admin">Администратор</option></select></div>
-    <button class="btn sec" style="margin-top:8px" onclick="addUser()">+ Нов потребител</button>`;
+  return S.users.map(u => `<div class="urow"><div style="flex:1;min-width:0"><b>${esc(u.name)}</b> <span class="mut">${ROLE[u.role]}${u.active ? '' : ' · спрян'}</span>
+      <div class="ulink">${u.username ? '👤 ' + esc(u.username) : 'без потребителско име'}${u.hasPass ? '' : ' · без парола'}</div></div>
+      <div class="ubtns">${u.id === TOKEN ? '<span class="mut">това си ти</span>' : `<button onclick="S.pwFor=S.pwFor==='${u.id}'?'':'${u.id}';$('usersBox').innerHTML=usersHtml()">Парола</button><button class="sec" onclick="setUser('${u.id}',{active:${!u.active}})">${u.active ? 'Спри' : 'Пусни'}</button>`}</div></div>
+    ${S.pwFor === u.id ? `<div class="pedit"><b>Нова парола за ${esc(u.name)}</b><div class="row" style="margin-top:6px"><input id="pw_u" placeholder="${u.username ? 'потребител: ' + esc(u.username) : 'потребителско име'}" value="${esc(u.username)}" autocapitalize="none" aria-label="Потребителско име"><input id="pw_p" placeholder="нова парола" autocomplete="off" aria-label="Нова парола"></div>
+      <button class="btn" style="margin-top:8px" onclick="setUser('${u.id}',{username:val('pw_u'),password:val('pw_p')})">Запази паролата</button></div>` : ''}`).join('')
+    + `<div class="pedit" style="margin-top:12px"><b>Нов потребител</b>
+      <div class="row" style="margin-top:6px"><input id="u_name" placeholder="Име, напр. Стефан" aria-label="Име"><select id="u_role" aria-label="Права"><option value="driver">Шофьор на бус</option><option value="staff">Служител</option><option value="admin">Администратор</option></select></div>
+      <div class="row" style="margin-top:8px"><input id="u_user" placeholder="потребителско име" autocapitalize="none" autocorrect="off" aria-label="Потребителско име"><input id="u_pass" placeholder="парола" autocomplete="off" aria-label="Парола"></div>
+      <button class="btn" style="margin-top:8px" onclick="addUser()">+ Създай потребител</button>
+      <div class="mut" style="margin-top:6px">Шофьорът на бус вижда рейсовете и отбелязва натоварих → сменени → прибрах. Служителят работи с гумите, но без настройки и потребители.</div></div>`;
 }
-async function addUser() { if (!val('u_name')) return toast('Въведи име', 1); try { S.users = await api('addUser', { name: val('u_name'), role: val('u_role') }); $('usersBox').innerHTML = usersHtml(); toast('Потребителят е създаден. Копирай линка му ✔'); } catch (e) { toast(e.message, 1); } }
-async function setUser(token, active) { try { S.users = await api('setUser', { token, active }); $('usersBox').innerHTML = usersHtml(); toast(active ? 'Достъпът е пуснат ✔' : 'Достъпът е спрян ✔'); } catch (e) { toast(e.message, 1); } }
-function copyLink(t) {
-  const done = () => toast('Линкът е копиран ✔');
-  const fallback = () => { const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Задръж върху линка и го копирай', 1); } a.remove(); };
-  try { navigator.clipboard.writeText(t).then(done, fallback); } catch (e) { fallback(); }
+async function addUser() {
+  if (!val('u_name') || !val('u_user') || !val('u_pass')) return toast('Попълни име, потребителско име и парола', 1);
+  try { S.users = await api('addUser', { name: val('u_name'), role: val('u_role'), username: val('u_user'), password: val('u_pass') }); $('usersBox').innerHTML = usersHtml(); toast('Потребителят е създаден. Кажи му името и паролата ✔'); }
+  catch (e) { toast(e.message, 1); }
+}
+async function setUser(id, patch) {
+  try { S.users = await api('setUser', Object.assign({ id }, patch)); S.pwFor = ''; $('usersBox').innerHTML = usersHtml(); toast('Записано ✔'); }
+  catch (e) { toast(e.message, 1); }
+}
+async function savePass() {
+  const n = $('p_new').value, n2 = $('p_new2').value;
+  if (n.length < 4) return toast('Паролата трябва да е поне 4 знака', 1);
+  if (n !== n2) return toast('Двете нови пароли не съвпадат', 1);
+  try {
+    const r = await api('setPass', { old: $('p_old') ? $('p_old').value : '', username: val('p_user'), password: n });
+    TOKEN = r.token; USER.username = r.username; USER.hasPass = true;
+    try { localStorage.setItem('gumi_t', TOKEN); } catch (e) {}
+    toast('Паролата е сменена ✔'); go('home');
+  } catch (e) { toast(e.message, 1); }
+}
+function forgetLogin() { TOKEN = ''; DB = null; try { localStorage.removeItem('gumi_t'); } catch (e) {} }
+function logout() { forgetLogin(); showLogin(); }
+function showLogin(msg) {
+  $('tabbar').innerHTML = '';
+  $('hdr').innerHTML = '<div class="top"><h1>Гуми Автопарк</h1></div>';
+  $('app').innerHTML = `<form class="card login" onsubmit="doLogin(event)"><div class="lico" aria-hidden="true">🛞</div><b style="font-size:20px;text-align:center">Вход</b>
+    ${msg ? `<div class="calc" style="background:var(--badbg);color:var(--bad)">${esc(msg)}</div>` : ''}
+    <label for="l_user">Потребителско име</label><input id="l_user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+    <label for="l_pass">Парола</label><input id="l_pass" type="password" autocomplete="current-password" required>
+    <button class="btn" type="submit">Влез</button></form>`;
+}
+async function doLogin(ev) {
+  ev.preventDefault();
+  try {
+    const r = await api('login', { username: val('l_user'), password: $('l_pass').value });
+    TOKEN = r.token; try { localStorage.setItem('gumi_t', TOKEN); } catch (e) {}
+    await boot();
+  } catch (e) { showLogin(e.message); }
 }
 function exportCSV() {
   const set = (c, k) => { const s = c.sets[k]; return s ? [have(s), s.tread, s.dot, s.rims ? 'да' : 'не'] : ['', '', '', '']; };
@@ -983,9 +1039,10 @@ function showMsg(t, retry) {
 }
 async function boot() {
   if (API_URL.indexOf('http') !== 0) return showMsg('Липсва адресът на сървъра. Отвори index.html и попълни API_URL.');
-  if (!TOKEN) return showMsg('Отвори приложението от личния си линк за вход.<br>Поискай го от администратора.');
+  if (new URLSearchParams(location.search).get('t')) history.replaceState(null, '', location.pathname);
+  if (!TOKEN) return showLogin();
   showMsg('<div class="spin"></div>Зареждане…');
-  try { await api('load'); render(); } catch (e) { showMsg('⚠️ ' + esc(e.message), true); }
+  try { await api('load'); render(); } catch (e) { if (e.auth) showLogin(e.message); else showMsg('⚠️ ' + esc(e.message), true); }
 }
 boot();
 </script>
