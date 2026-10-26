@@ -274,6 +274,7 @@ body.loading main{pointer-events:none;opacity:.75}
 @keyframes ld{to{background-position:-200% 0}}
 .spin{width:34px;height:34px;margin:0 auto 12px;border-radius:50%;border:4px solid var(--soft2);border-top-color:var(--lime);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.diag{margin:0 0 10px;font-size:13px}.diag summary{cursor:pointer;color:var(--mut);font-weight:700;padding:4px 0}
 .tabbar:has(.tabbar-in:empty){display:none}
 .ubtn{border:1px solid var(--chipbd);background:var(--chip);color:var(--hdrsub);border-radius:20px;padding:6px 12px;min-height:36px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .login{max-width:420px;margin:24px auto 0;padding:22px 18px;display:flex;flex-direction:column}
@@ -629,7 +630,7 @@ const V = {
     let h = (canEdit() ? `<div class="row" style="margin-bottom:12px"><button class="btn" style="margin:0" onclick="go('newCar')">+ Кола</button><button class="btn sec" style="margin:0" onclick="refreshRoad()">🔄 Обнови</button></div><div class="mut" style="margin:-4px 0 12px">Колите от пътната книжка идват сами (🔄 Обнови ги взима веднага). С „+ Кола“ добавяш само коли, които ги няма там.</div>` : '') + `<input class="search" id="f_q" placeholder="Търси по номер, модел, шофьор…" value="${esc(S.q)}" oninput="S.q=this.value;render();$('f_q').focus();$('f_q').setSelectionRange(this.value.length,this.value.length)">
       <label for="f_sz" style="margin-top:0">Размер</label><select id="f_sz" style="margin-bottom:4px" onchange="S.size=this.value;render()"><option value="">Всички размери</option>${sizeList().map(x => `<option value="${esc(x.size)}" ${S.size === x.size ? 'selected' : ''}>${esc(x.size)} (${x.cars} коли)</option>`).join('')}</select>
       <div class="tabs">${[['all', 'Всички']].concat(DB.cars.some(isTodo) ? [['todo', 'Нови']] : [], [['wait', 'Смяна'], ['low', 'Проблеми'], ['rot', 'Ротация']]).map(t => `<button class="${S.tab === t[0] ? 'on' : ''}" onclick="S.tab='${t[0]}';render()">${t[1]}</button>`).join('')}</div>
-      <div class="mut" style="margin-bottom:8px">${list.length} ${list.length === 1 ? 'кола' : 'коли'}${S.size ? ' с размер ' + esc(S.size) : ''}</div>`;
+      <div class="mut" style="margin-bottom:8px">${list.length} ${list.length === 1 ? 'кола' : 'коли'}${S.size ? ' с размер ' + esc(S.size) : ''}</div>${canEdit() ? roadDiag() : ''}`;
     return h + (list.length ? carGrid(list, c => carTile(c, c.size + ' · ' + c.driver)) : '<div class="center">Няма коли</div>');
   },
 
@@ -1032,6 +1033,13 @@ function exportCSV() {
   const csv = '\ufeff' + rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'gumi-' + todayStr() + '.csv';
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function roadDiag() {
+  const r = DB.road || {};
+  if (!DB.version) return '<div class="calc" style="background:var(--warnbg);color:var(--warntx)">⚠️ Сървърът е стара версия. В Apps Script: Deploy → Manage deployments → ✏️ → New version → Deploy.</div>';
+  if (r.rows == null) return '';
+  const av = Object.keys(r.activeVals || {}).map(k => esc(k) + ': ' + r.activeVals[k]).join(', ');
+  return `<details class="diag"><summary>Проверка на пътната книжка</summary><div class="mut">Лист „${esc(r.sheet)}“ · ${r.rows} реда · ${r.withPlate} с номер · <b>${r.cars} коли</b><br>Номер: колона ${esc(r.plateCol)}${r.kmCol ? ' · км: колона ' + r.kmCol : ''}${r.activeCol ? '<br>„Активен“ (колона ' + r.activeCol + '): ' + av : ''}<br>Сървър: версия ${esc(DB.version)}</div></details>`;
 }
 function showMsg(t, retry) {
   $('hdr').innerHTML = '<div class="top"><h1>Гуми Автопарк</h1></div>';
