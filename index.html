@@ -1,0 +1,993 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b111d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Гуми">
+<title>Гуми Автопарк</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Sans+Narrow:wght@700&display=swap">
+<style>
+:root{--navy:#0b1f3a;--navy2:#15325c;--bg:#f2f4f8;--card:#ffffff;--txt:#1b2433;--mut:#5f6b7c;--line:#dde2ea;
+--soft:#eef2f8;--soft2:#e6ebf2;--ic:#e9eef6;--okbg:#e3f6ed;--warnbg:#fdf1dc;--warntx:#9a6200;--badbg:#fde6e7;--infobg:#e3edff;--sumbg:#fdecdc;--sumtx:#a4520f;
+--cbd:transparent;--ok:#1a9a60;--warn:#e09612;--bad:#d9434a;--blue:#2f6fed;--vio:#7457e8;--teal:#0f9a9a;--org:#e0782a;--win:#2f6fed}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#1a2335;--card:#3a4d72;--txt:#f3f6fb;--mut:#c3cddd;--line:#52678f;--soft:#2e3f5e;--soft2:#4a5f88;--ic:#4a5f88;--cbd:rgba(255,255,255,.14);--okbg:#123626;--warnbg:#3a2c12;--warntx:#f2b84b;--badbg:#3d1a1d;--infobg:#17294a;--sumbg:#3a2616;--sumtx:#f0a766;--ok:#3fcf8e;--bad:#f06a70;--win:#6a9cff}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#1a2335;--card:#3a4d72;--txt:#f3f6fb;--mut:#c3cddd;--line:#52678f;--soft:#2e3f5e;--soft2:#4a5f88;--ic:#4a5f88;--cbd:rgba(255,255,255,.14);--okbg:#123626;--warnbg:#3a2c12;--warntx:#f2b84b;--badbg:#3d1a1d;--infobg:#17294a;--sumbg:#3a2616;--sumtx:#f0a766;--ok:#3fcf8e;--bad:#f06a70;--win:#6a9cff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{max-width:100%;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt);-webkit-text-size-adjust:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));font-size:15px}
+.demo{background:#f0a020;color:#1b1400;font-size:13px;font-weight:600;padding:8px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.demo .sw{display:flex;gap:4px}
+.demo button{border:0;border-radius:8px;padding:5px 10px;font-weight:700;font-size:12px;background:rgba(0,0,0,.12);color:#1b1400;cursor:pointer}
+.demo button.on{background:#1b1400;color:#f0a020}
+header{background:linear-gradient(160deg,var(--navy),var(--navy2));color:#fff;padding:14px 16px 20px;border-radius:0 0 22px 22px;position:relative;overflow:hidden}
+header::before{content:'';position:absolute;right:-70px;top:-70px;width:210px;height:210px;border-radius:50%;border:26px dashed rgba(255,255,255,.07);pointer-events:none}
+header::after{content:'';position:absolute;right:-12px;top:-12px;width:94px;height:94px;border-radius:50%;border:10px solid rgba(255,255,255,.05);pointer-events:none}
+header>*{position:relative;z-index:1}
+.top{display:flex;align-items:center;gap:10px}
+.top h1{font-size:20px;margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top small{opacity:.75;font-size:13px}
+.back{background:rgba(255,255,255,.15);border:0;color:#fff;font-size:20px;width:36px;height:36px;border-radius:10px;cursor:pointer;flex:none}
+.counters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+.cnt{background:rgba(255,255,255,.1);border-radius:12px;padding:10px 4px;text-align:center}
+.cnt b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.cnt span{font-size:11px;opacity:.8}
+.season{margin-top:12px;background:rgba(255,255,255,.1);border-radius:12px;padding:10px 12px;font-size:13px}
+.season .bar{height:8px;border-radius:4px;background:rgba(0,0,0,.25);margin-top:8px;overflow:hidden}
+.season .bar i{display:block;height:100%;background:#6aa7ff;border-radius:4px}
+main{padding:16px;max-width:720px;margin:0 auto}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.tile{border:0;border-radius:18px;color:#fff;padding:16px 6px;font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;font-family:inherit;background-image:linear-gradient(150deg,rgba(255,255,255,.22),rgba(255,255,255,0) 55%,rgba(0,0,0,.14));box-shadow:0 8px 16px -8px rgba(11,31,58,.55);transition:transform .12s ease}
+.tile:active,.szc:active{transform:scale(.96)}
+.tile{min-width:0;text-align:center;line-height:1.2}
+.tile i{font-style:normal;font-size:22px;width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,.2);display:grid;place-items:center}
+h2{font-size:12px;margin:22px 0 10px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);font-weight:800}
+.plt{--h:22px;display:inline-flex;align-items:stretch;height:var(--h);border:1.5px solid #111;border-radius:5px;background:#fff;box-shadow:inset 0 0 0 1.5px #fff,inset 0 0 0 2.5px #222,0 1px 2px rgba(0,0,0,.25);color:#111;overflow:hidden;white-space:nowrap;max-width:100%;font-family:"PT Sans Narrow","Arial Narrow",sans-serif;font-weight:700;line-height:1}
+.plt i{background:#003399;color:#fff;font-style:normal;width:calc(var(--h)*.52);flex:none;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:2px 0}
+.plt i svg{width:78%;height:auto;display:block}
+.plt i b{font-size:calc(var(--h)*.3);font-weight:700;letter-spacing:0;font-family:"PT Sans Narrow","Arial Narrow",sans-serif}
+.plt>span{display:flex;align-items:center;padding:0 calc(var(--h)*.28);font-size:calc(var(--h)*.74);letter-spacing:.02em;word-spacing:.08em;color:#111}
+.plt.big{--h:38px;border-radius:6px}
+.hero{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 14px}
+.ring{--p:0;width:58px;height:58px;border-radius:50%;flex:none;background:conic-gradient(#7db4ff calc(var(--p)*1%),rgba(255,255,255,.14) 0);display:grid;place-items:center}
+.ring b{width:44px;height:44px;border-radius:50%;background:var(--navy2);display:grid;place-items:center;font-size:13px}
+.axle{display:grid;grid-template-columns:1fr 70px 1fr;grid-template-rows:auto auto;gap:8px 10px;margin-top:12px;align-items:stretch}
+.axle .body{grid-column:2;grid-row:1/3;display:flex;align-items:center;justify-content:center}
+.axle .body svg{width:62px;height:auto}
+.card{background:var(--card);border:1px solid var(--cbd);border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.mc{display:flex;gap:12px;align-items:center;cursor:pointer}
+.mc .ic{width:42px;height:42px;border-radius:12px;background:var(--ic);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+.mc .t{flex:1;min-width:0}
+.mc .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plate{letter-spacing:.03em}
+.mut{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
+.badge{font-size:11px;font-weight:700;padding:4px 8px;border-radius:20px;white-space:nowrap}
+.b-ok{background:var(--okbg);color:var(--ok)}.b-warn{background:var(--warnbg);color:var(--warntx)}.b-bad{background:var(--badbg);color:var(--bad)}
+.b-win{background:var(--infobg);color:var(--win)}.b-sum{background:var(--sumbg);color:var(--sumtx)}.b-soft{background:var(--soft2);color:var(--mut)}
+.bdg{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+label.chk{display:flex;gap:10px;align-items:center;color:var(--txt);margin:0;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+label.chk input{width:22px;height:22px}
+input,select,textarea{width:100%;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--txt);font-family:inherit}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+textarea{min-height:70px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{width:100%;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:700;color:#fff;background:var(--blue);margin-top:16px;cursor:pointer}
+.btn.sec{background:var(--soft2);color:var(--txt)}
+.calc{background:var(--soft);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:14px;line-height:1.6}
+.kv{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:5px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.kv:last-child{border:0}
+.kv b{text-align:right}
+.search{margin-bottom:12px}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(80px + env(safe-area-inset-bottom,0px));background:var(--navy);color:#fff;padding:14px;border-radius:12px;text-align:center;font-weight:600;z-index:9}
+.toast.err{background:var(--bad)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -6px 18px -8px rgba(11,31,58,.25);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabbar-in{max-width:720px;margin:0 auto;display:grid;grid-auto-flow:column;grid-auto-columns:1fr}
+.tabbar button{border:0;background:none;color:var(--mut);font-family:inherit;font-size:11px;font-weight:700;padding:8px 2px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;position:relative;min-height:58px}
+.tabbar svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button[aria-current="page"]{color:var(--blue)}
+.tabbar button[aria-current="page"]::before{content:'';position:absolute;top:0;left:28%;right:28%;height:3px;border-radius:0 0 3px 3px;background:var(--blue)}
+.tabbar i{position:absolute;top:5px;left:calc(50% + 6px);min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-style:normal;font-size:10.5px;font-weight:800;display:grid;place-items:center;padding:0 4px}
+.center{text-align:center;padding:40px 10px;color:var(--mut)}
+.tabs{display:flex;gap:6px;margin:10px 0}
+.tabs button{flex:1;border:0;border-radius:10px;padding:10px;background:var(--soft2);color:var(--txt);font-weight:600;font-size:13px;cursor:pointer}
+.tabs button.on{background:var(--navy);color:#fff}
+.step{display:flex;gap:10px;align-items:center}
+.step .t{flex:1;min-width:0}
+.step button{border:0;border-radius:10px;padding:10px 12px;min-width:104px;min-height:44px;font-weight:700;font-size:14px;cursor:pointer;background:var(--navy);color:#fff}
+.step button.done{background:var(--okbg);color:var(--ok);cursor:default}
+.dots{display:flex;gap:4px;margin-top:6px}
+.dots i{flex:1;height:5px;border-radius:3px;background:var(--soft2)}
+.dots i.on{background:var(--blue)}
+.dots i.fin{background:var(--ok)}
+.set{border-radius:12px;padding:12px;margin-bottom:10px;background:var(--soft)}
+.set.mnt{box-shadow:inset 0 0 0 2px var(--win)}
+.set.mnt.sum{box-shadow:inset 0 0 0 2px var(--org)}
+.set .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:700}
+.tread{height:8px;border-radius:4px;background:var(--soft2);margin:8px 0 4px;overflow:hidden}
+.tread i{display:block;height:100%;border-radius:4px}
+.set.miss{background:var(--badbg)}
+.tires{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.tire{border:0;border-radius:10px;min-height:50px;padding:6px 2px;font-size:13px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:inherit}
+.tire span{font-size:11px;font-weight:600}
+.tire.ok{background:var(--okbg);color:var(--ok)}.tire.worn{background:var(--warnbg);color:var(--warntx)}.tire.scrap{background:var(--badbg);color:var(--bad)}
+.tire:disabled{cursor:default}
+.setbtns{display:flex;gap:8px;margin-top:10px}
+.setbtns button{flex:1;border:0;border-radius:10px;min-height:44px;font-weight:700;font-size:14px;cursor:pointer;background:var(--navy);color:#fff;font-family:inherit}
+.ord{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;font-variant-numeric:tabular-nums}
+.ord:last-child{border:0}
+button.ord{width:100%;background:none;border-width:0 0 1px;border-style:solid;border-color:var(--line);color:inherit;font:inherit;text-align:left;cursor:pointer}
+button.ord:last-child{border:0}
+.szgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.szc{background:var(--card);border:1px solid var(--cbd);border-top:4px solid var(--acc,var(--line));border-radius:14px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.08),0 6px 14px -10px rgba(11,31,58,.35);display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;color:var(--txt);font-family:inherit;cursor:pointer;min-width:0;transition:transform .12s ease}
+.szc .sz{font-weight:800;font-size:15px;letter-spacing:.01em}
+.szc .n{font-size:30px;font-weight:800;line-height:1;color:var(--blue);font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:6px}
+.szc .n small{font-size:13px;font-weight:600;color:var(--mut)}
+.szc .sets{display:flex;gap:10px;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
+.szc .tb{display:flex;flex-wrap:wrap;gap:4px}
+@media (min-width:560px){.szgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.fset{display:flex;flex-direction:column;gap:6px}
+.fset .row2{display:flex;gap:8px;margin-top:4px;width:100%}
+.fset .row2 button{flex:1;border:0;border-radius:10px;min-height:44px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;background:var(--navy);color:#fff}
+.fset .row2 button.sec{background:var(--soft2);color:var(--txt)}
+.fset .row2 button.red{background:var(--badbg);color:var(--bad)}
+.fset .row2 button.cfm,.btn.cfm{background:var(--org);color:#fff}
+.dots4{display:flex;gap:4px}.dots4 i{width:14px;height:14px;border-radius:50%;background:var(--ok)}.dots4 i.worn{background:var(--warn)}.dots4 i.scrap{background:var(--bad)}.dots4 i.none{background:var(--soft2)}
+.legal{display:block;width:100%;text-align:left;border:0;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-family:inherit;font-size:14px;line-height:1.4;cursor:pointer;color:var(--txt)}
+.legal b{display:block;font-size:15px;margin-bottom:2px}
+.legal.warn{background:var(--warnbg);box-shadow:inset 4px 0 0 var(--warn)}
+.legal.bad{background:var(--badbg);box-shadow:inset 4px 0 0 var(--bad)}
+.legal.ok{background:var(--okbg);color:var(--ok);font-weight:700;cursor:default}
+.setmeta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:8px;font-size:13px;color:var(--mut)}
+.setmeta b{color:var(--txt)}
+.rimb{border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:20px;padding:6px 12px;min-height:36px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+.rimb.on{background:var(--infobg);color:var(--win);border-color:transparent}
+.rimb:disabled{cursor:default}
+.rimb.cfmr{background:var(--org);color:#fff;border-color:transparent}
+.bill{padding:4px 12px}
+.brow{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}
+.bchk{display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin:0;color:var(--txt);font-size:14px;font-weight:600}
+.bchk input[type=checkbox]{width:22px;height:22px;flex:none}
+.bchk .bn{padding:8px 10px;font-size:14px}
+.bq{width:46px;padding:8px 4px;text-align:center;font-size:15px}
+.bp{width:64px;padding:8px 6px;text-align:right;font-size:15px}
+.bx{font-size:12px;color:var(--mut);white-space:nowrap}
+.btot{text-align:right;padding:10px 0 6px;font-size:15px}
+.btot b{font-size:20px}
+.bbase{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0}
+.bbase button{border:1px solid var(--line);background:var(--soft);color:var(--txt);border-radius:16px;padding:10px 8px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;min-height:64px}
+.bbase button small{font-size:18px;font-weight:800}
+.bbase button.on{background:var(--navy);color:var(--lime);border-color:transparent}
+.plink{border:0;background:none;color:var(--win);font:inherit;font-weight:700;font-size:14px;padding:4px 0 10px;cursor:pointer;text-align:left}
+.pedit{background:var(--soft);border-radius:16px;padding:10px 12px;margin-bottom:10px}
+.pedit .prow{padding:8px 0}
+.row2b{display:flex;gap:8px;margin-top:6px}
+.row2b button{flex:1;border:0;border-radius:14px;min-height:44px;font:inherit;font-weight:800;cursor:pointer;background:var(--lime);color:var(--limeink)}
+.row2b button.sec{background:var(--soft2);color:var(--txt)}
+.bxl{font-size:13px;color:var(--mut);font-weight:700;margin:4px 0 8px}
+.bext{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:10px}
+.echip{position:relative;margin:0;display:inline-flex}
+.echip input{position:absolute;opacity:0;width:1px;height:1px}
+.echip span{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:20px;background:var(--soft);border:1px solid var(--line);font-weight:700;font-size:13.5px;color:var(--txt);cursor:pointer}
+.echip input:checked+span{background:var(--org);border-color:transparent;color:#fff}
+.echip input:checked+span::before{content:'✓ '}
+.echip input:focus-visible+span{outline:2px solid var(--win);outline-offset:2px}
+.eoth{flex:1;min-width:120px;padding:8px 12px;font-size:14px;min-height:40px}
+.bsum{border-top:1px solid var(--line);padding:10px 0 8px}
+.bsum label{margin-top:0}
+.bsumin{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.bsumin input{font-size:26px;font-weight:800;text-align:right;max-width:160px}
+.bsumin span{font-size:22px;font-weight:800}
+.srow{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.sdel{border:0;background:var(--badbg);color:var(--bad);width:44px;height:44px;border-radius:12px;font-weight:800;cursor:pointer;flex:none}
+.prow{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.prow:last-child,.brow:last-of-type{border-bottom:0}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--infobg);color:var(--win);border:0;border-radius:20px;padding:8px 14px;font-weight:700;font-size:14px;margin-bottom:10px;cursor:pointer;font-family:inherit}
+.ord b{font-size:16px;white-space:nowrap}
+.hist{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.hist:last-child{border:0}
+.hist .d{width:78px;flex:none;color:var(--mut);font-weight:600;font-variant-numeric:tabular-nums}
+@media (max-width:380px){.cnt b{font-size:18px}.tile{font-size:12px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@500;600;700;800&display=swap">
+<style>
+/* ===== Визия „Аврора“: стъклени карти над светещ фон, плаващо меню, лайм акцент ===== */
+:root{color-scheme:light;--bg:#eaeef4;--glow1:rgba(120,220,255,.55);--glow2:rgba(198,244,50,.45);--glow3:rgba(150,120,255,.28);
+--card:rgba(255,255,255,.72);--cbd:rgba(255,255,255,.95);--txt:#0f1626;--mut:#4f5a6e;--line:rgba(15,22,38,.1);--soft:rgba(15,22,38,.05);--soft2:rgba(15,22,38,.08);--ic:rgba(15,22,38,.06);
+--navy:#0f1626;--navy2:#1b2540;--lime:#c6f432;--limeink:#0f1626;--limetx:#3f6a00;--blue:#0f1626;--hdrtx:#0f1626;--hdrsub:#4f5a6e;--chip:rgba(255,255,255,.6);--chipbd:rgba(255,255,255,.9);
+--shadow:0 10px 30px -12px rgba(15,22,38,.25);--disp:"Unbounded","Manrope",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0b111d;--glow1:rgba(40,170,255,.32);--glow2:rgba(198,244,50,.22);--glow3:rgba(140,90,255,.3);
+--card:rgba(255,255,255,.085);--cbd:rgba(255,255,255,.16);--txt:#f2f5fa;--mut:#aab5c8;--line:rgba(255,255,255,.12);--soft:rgba(255,255,255,.06);--soft2:rgba(255,255,255,.12);--ic:rgba(255,255,255,.1);
+--blue:#c6f432;--limetx:#c6f432;--hdrtx:#ffffff;--hdrsub:#aab5c8;--chip:rgba(255,255,255,.08);--chipbd:rgba(255,255,255,.16);--shadow:0 14px 34px -14px rgba(0,0,0,.7)}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0b111d;--glow1:rgba(40,170,255,.32);--glow2:rgba(198,244,50,.22);--glow3:rgba(140,90,255,.3);
+--card:rgba(255,255,255,.085);--cbd:rgba(255,255,255,.16);--txt:#f2f5fa;--mut:#aab5c8;--line:rgba(255,255,255,.12);--soft:rgba(255,255,255,.06);--soft2:rgba(255,255,255,.12);--ic:rgba(255,255,255,.1);
+--blue:#c6f432;--limetx:#c6f432;--hdrtx:#ffffff;--hdrsub:#aab5c8;--chip:rgba(255,255,255,.08);--chipbd:rgba(255,255,255,.16);--shadow:0 14px 34px -14px rgba(0,0,0,.7)}
+html{background:var(--bg)}
+body{font-family:Manrope,-apple-system,"Segoe UI",sans-serif;background:
+ radial-gradient(60vw 50vw at 100% 0%,var(--glow1),transparent 70%),
+ radial-gradient(55vw 45vw at 0% 30%,var(--glow2),transparent 70%),
+ radial-gradient(70vw 60vw at 80% 85%,var(--glow3),transparent 70%),var(--bg);background-attachment:fixed;padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+/* хедър: без плътен блок, текстът стои директно върху светенето */
+header{background:transparent;color:var(--hdrtx);border-radius:0;padding:18px 16px 6px;max-width:720px;margin:0 auto}
+header::before,header::after{display:none}
+.top h1{font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:-.01em}
+.top small{color:var(--hdrsub);opacity:1}
+.back{background:var(--chip);border:1px solid var(--chipbd);color:var(--hdrtx);border-radius:14px;width:42px;height:42px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.counters{gap:8px}
+.cnt{background:var(--chip);border:1px solid var(--chipbd);border-radius:20px;padding:12px 4px 10px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.cnt b{font-family:var(--disp);font-size:24px;font-weight:700}
+.cnt span{color:var(--hdrsub);opacity:1;font-weight:700}
+.season{background:var(--navy);color:#fff;border-radius:24px;padding:14px 16px;box-shadow:var(--shadow)}
+.ring{background:conic-gradient(var(--lime) calc(var(--p)*1%),rgba(255,255,255,.14) 0)}
+.ring b{background:var(--navy);font-family:var(--disp);font-size:13px}
+main{padding-top:10px}
+h2{font-family:var(--disp);font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:none;color:var(--txt);margin:26px 0 12px}
+/* бързи действия: стъклени плочки с цветна икона */
+.tile{border-radius:24px;background-image:linear-gradient(160deg,rgba(255,255,255,.28),rgba(255,255,255,0) 60%);box-shadow:var(--shadow);font-weight:800;font-size:12.5px;padding:14px 4px;overflow-wrap:anywhere}
+.tile i{border-radius:16px;background:rgba(255,255,255,.25)}
+/* стъклени карти */
+.card,.szc,.set{background:var(--card);border:1px solid var(--cbd);border-radius:22px;box-shadow:var(--shadow);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4)}
+.szc{border-top:1px solid var(--cbd);position:relative;overflow:hidden;padding:14px}
+.szc::before{content:'';position:absolute;left:14px;top:0;width:34px;height:4px;border-radius:0 0 4px 4px;background:var(--acc,var(--line))}
+.szc .sz{font-weight:800}
+.szc .n{font-family:var(--disp);font-size:30px;font-weight:700;letter-spacing:-.02em}
+.set.mnt{box-shadow:inset 0 0 0 2px var(--win),var(--shadow)}
+.set.mnt.sum{box-shadow:inset 0 0 0 2px var(--org),var(--shadow)}
+.set.miss{background:var(--badbg)}
+.badge{border-radius:20px}
+.btn{border-radius:18px;background:var(--lime);color:var(--limeink);font-weight:800;box-shadow:0 10px 24px -12px rgba(140,190,0,.8)}
+.btn.sec{background:var(--soft2);color:var(--txt);box-shadow:none}
+.btn[style*="background:var(--"]{color:#fff;box-shadow:var(--shadow)}
+.btn.cfm{background:var(--org);color:#fff}
+.tabs{background:var(--soft);border-radius:18px;padding:4px;gap:4px}
+.tabs button{background:transparent;border-radius:14px;font-weight:700}
+.tabs button.on{background:var(--navy);color:var(--lime)}
+.legal{border-radius:22px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.tire{border-radius:16px;font-weight:800}
+.rimb{border-radius:20px;background:var(--soft)}
+.rimb.on{background:var(--infobg)}
+.setbtns button,.fset .row2 button{border-radius:14px}
+.fset .row2 button:not(.sec):not(.red):not(.cfm){background:var(--lime);color:var(--limeink)}
+.step button{border-radius:14px;background:var(--lime);color:var(--limeink);font-weight:800}
+.step button.done{background:var(--okbg);color:var(--ok)}
+.dots i.on{background:var(--lime)}
+.calc{border-radius:16px;background:var(--soft)}
+input,select,textarea{border-radius:14px;background:var(--card);border-color:var(--line)}
+.toast{border-radius:20px;background:var(--navy);color:var(--lime);bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+/* плаващо меню-капсула */
+.tabbar{left:14px;right:14px;bottom:calc(12px + env(safe-area-inset-bottom,0px));padding:6px;border-radius:30px;border:1px solid var(--chipbd);background:var(--chip);backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);box-shadow:var(--shadow);max-width:560px;margin:0 auto}
+:root:not([data-theme="light"]) .tabbar{background:rgba(20,28,44,.72)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .tabbar{background:rgba(255,255,255,.78)}}
+:root[data-theme="light"] .tabbar{background:rgba(255,255,255,.78)}
+.tabbar-in{gap:2px}
+.tabbar button{min-height:52px;border-radius:24px;color:var(--mut);font-size:10.5px;transition:background .2s ease,color .2s ease}
+.tabbar button[aria-current="page"]{background:var(--navy);color:var(--lime)}
+.tabbar button[aria-current="page"]::before{display:none}
+.tabbar i{top:3px;border:2px solid var(--bg)}
+.demo{border-radius:0}
+html,body{margin:0}
+header{padding-top:calc(18px + env(safe-area-inset-top,0px))}
+body.loading::before{content:'';position:fixed;top:0;left:0;right:0;height:3px;z-index:20;background:linear-gradient(90deg,var(--lime),var(--win),var(--lime));background-size:200% 100%;animation:ld 1s linear infinite}
+body.loading main{pointer-events:none;opacity:.75}
+@keyframes ld{to{background-position:-200% 0}}
+.spin{width:34px;height:34px;margin:0 auto 12px;border-radius:50%;border:4px solid var(--soft2);border-top-color:var(--lime);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.urow{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.ulink{font-size:12px;color:var(--mut);word-break:break-all;margin-top:2px;user-select:all;-webkit-user-select:all}
+.ubtns{display:flex;flex-direction:column;gap:6px}
+.ubtns button{border:0;border-radius:12px;min-height:40px;padding:0 12px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;background:var(--lime);color:var(--limeink)}
+.ubtns button.sec{background:var(--soft2);color:var(--txt)}
+.season{border:1px solid var(--chipbd)}
+.temo{font-size:24px;line-height:1;display:block;transition:transform .15s ease;filter:saturate(.85)}
+.tabbar button[aria-current="page"] .temo{transform:scale(1.18) translateY(-1px);filter:none}
+/* iPhone: полето за дата има собствена минимална ширина и излиза от колоната */
+.row>*{min-width:0}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;max-width:100%;min-height:48px;text-align:left}
+input[type=date]::-webkit-date-and-time-value{text-align:left}
+.top h1{font-size:19px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tile[style*="var(--blue)"]{color:#0f1626}:root:not([data-theme="light"]) .tile[style*="var(--blue)"] i{background:rgba(15,22,38,.12)}}
+:root[data-theme="dark"] .tile[style*="var(--blue)"]{color:#0f1626}
+</style>
+</head>
+<body>
+<header id="hdr"></header>
+<main id="app"><div class="center">Зареждане…</div></main>
+<nav class="tabbar" aria-label="Раздели"><div class="tabbar-in" id="tabbar"></div></nav>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ===== ДЕМО: примерна база в паметта (в истинското приложение това е Google Sheets) ===== */
+const USER = { name: '', role: '' };
+let TARGET = 'winter';   // сезонът, към който сменяме сега — идва от сървъра
+const SETN = { summer: 'Летни', winter: 'Зимни', all: 'Всесезонни' };
+const LIMIT = { summer: 1.6, winter: 4, all: 4 };
+const NEWD = { summer: 8, winter: 9, all: 8.5 };   // дълбочина на нова гума, мм
+const ICO = { summer: '☀️', winter: '❄️', all: '🌦️' };
+let ROT_KM = 10000;   // ротация предни ↔ задни — идва от сървъра (лист „Настройки“)
+const r1 = n => Math.round(n * 10) / 10;
+const numv = x => { const n = parseFloat(String(x).replace(',', '.')); return isNaN(n) ? 0 : n; };
+const todayStr = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const dayShift = k => { const d = new Date(); d.setDate(d.getDate() + k); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+let seq = 1; const nid = () => 'x' + (seq++);
+const YEAR = +todayStr().slice(0, 4);
+const daysTo = d => Math.round((Date.parse(d) - Date.parse(todayStr())) / 864e5);
+const kinds = c => c.allSeason ? ['all'] : ['winter', 'summer'];
+const ageOf = s => s && s.dot ? YEAR - +s.dot : 0;
+
+let DB = null;   // идва от сървъра
+
+/* ---------- Логика (в истинското приложение е в Apps Script) ---------- */
+const carById = id => DB.cars.find(c => c.id === id);
+const tripOf = id => DB.trips.find(t => t.items.some(x => x.carId === id && x.step < 3));
+const itemOf = id => { const t = tripOf(id); return t ? t.items.find(x => x.carId === id) : null; };
+const other = s => s === 'summer' ? 'winter' : 'summer';
+const tripDone = t => t.items.every(x => x.step === 3);
+function treadState(set, kind) {
+  const t = numv(set.tread), lim = LIMIT[kind];
+  if (t < lim || (kind === 'summer' && t <= 1.6)) return 'bad';
+  if (t < lim + 1) return 'warn';
+  return 'ok';
+}
+const lowTread = c => kinds(c).filter(k => c.sets[k] && treadState(c.sets[k], k) !== 'ok');
+// изминати км с комплекта: натрупани + от последната смяна до сега (по пътната книжка)
+const kmOf = (c, k) => { const s = c.sets[k]; if (!s) return 0; return (s.kmRun || 0) + (c.mounted === k ? Math.max(0, (c.odo || c.km) - c.km) : 0); };
+const isTodo = c => !c.size || kinds(c).every(k => !c.sets[k]);
+const kmMan = c => c.manual || !c.roadKm;   // км се пишат на ръка: кола извън пътната книжка или още без км там
+const kmFmt = n => Math.round(n).toLocaleString('bg-BG') + ' км';
+// ротация: колко км остават до следващата (отрицателно = просрочена)
+const rotLeft = (c, k) => { const s = c.sets[k]; return s ? ROT_KM - (kmOf(c, k) - (s.rotAt || 0)) : null; };
+const rotDue = c => { const k = c.mounted, l = rotLeft(c, k); return l != null && l <= 1000 ? l : null; };
+const rotTxt = l => l < 0 ? 'просрочена с ' + kmFmt(-l) : 'след ' + kmFmt(l);
+const rotBadge = c => { const l = rotDue(c); return l == null ? '' : `<span class="badge ${l < 0 ? 'b-bad' : 'b-warn'}">🔄 ротация</span>`; };
+const POS = ['ПЛ', 'ПД', 'ЗЛ', 'ЗД'];
+const CAR_SVG = `<svg viewBox="0 0 60 120" aria-hidden="true"><rect x="7" y="4" width="46" height="112" rx="17" style="fill:var(--soft2);stroke:var(--mut)" stroke-width="2"/><path d="M14 36 Q30 26 46 36 L44 50 Q30 45 16 50 Z" style="fill:var(--mut)" opacity=".45"/><path d="M16 92 Q30 96 44 92 L45 102 Q30 108 15 102 Z" style="fill:var(--mut)" opacity=".35"/><path d="M30 8 l-5 7 h10 z" style="fill:var(--mut)"/></svg>`;
+const POSF = ['предна лява', 'предна дясна', 'задна лява', 'задна дясна'];
+const TST = { ok: 'Годна', worn: 'За смяна', scrap: 'Брак' };
+const have = s => s ? s.tires.filter(t => t !== 'scrap').length : 0;
+const need = s => s ? s.tires.filter(t => t !== 'ok').length : 4;
+// проблеми по комплект: няма комплект, бракувани, за смяна или нисък протектор
+function setIssue(c, k) {
+  const s = c.sets[k];
+  if (!s) return { lvl: 'bad', txt: 'Няма ' + SETN[k].toLowerCase() };
+  if (s.tires.includes('scrap')) return { lvl: 'bad', txt: have(s) + '/4 ' + SETN[k].toLowerCase() };
+  if (s.tires.includes('worn') || treadState(s, k) !== 'ok') return { lvl: 'warn', txt: '⚠ ' + SETN[k].toLowerCase() };
+  const a = ageOf(s);
+  if (a >= 6) return { lvl: a >= 10 ? 'bad' : 'warn', txt: '⏳ ' + SETN[k].toLowerCase() + ' ' + a + ' г.' };
+  return null;
+}
+const issues = c => kinds(c).map(k => setIssue(c, k)).filter(Boolean);
+// Законов период за зимни гуми в България: 15.11 – 01.03, мин. 4 мм (всесезонни M+S също важат)
+function legalInfo() {
+  const t = todayStr(), y = +t.slice(0, 4), md = t.slice(5);
+  const inPeriod = md >= '11-15' || md < '03-01';
+  const onSummer = DB.cars.filter(c => !c.allSeason && c.mounted === 'summer');
+  const lowWinter = DB.cars.filter(c => { const k = c.allSeason ? 'all' : 'winter'; return c.sets[k] && numv(c.sets[k].tread) < LIMIT.winter; });
+  return inPeriod ? { inPeriod, end: md >= '11-15' ? (y + 1) + '-03-01' : y + '-03-01', onSummer, lowWinter }
+    : { inPeriod, days: daysTo(y + '-11-15'), onSummer, lowWinter };
+}
+function legalBanner() {
+  const L = legalInfo(), n = L.onSummer.length, lw = L.lowWinter.length;
+  const extra = lw ? `<div style="margin-top:4px">${lw} ${lw === 1 ? 'кола има' : 'коли имат'} зимни под 4 мм — не отговарят на закона.</div>` : '';
+  if (L.inPeriod) {
+    if (!n && !lw) return `<div class="legal ok">⚖️ Всички коли са на зимни или всесезонни гуми ✔</div>`;
+    return `<button class="legal bad" onclick="go('cars',{tab:'wait',size:'',q:''})"><b>⚖️ Зимни гуми са задължителни до ${fmt(L.end).slice(0, 5)}</b><div>${n} ${n === 1 ? 'кола кара' : 'коли карат'} на летни — риск от глоба.</div>${extra}</button>`;
+  }
+  if (L.days > 60) return '';
+  return `<button class="legal warn" onclick="go('cars',{tab:'wait',size:'',q:''})"><b>⚖️ След ${L.days} дни (15.11) зимните гуми стават задължителни</b><div>Остават ${n} ${n === 1 ? 'кола' : 'коли'} за смяна.</div>${extra}</button>`;
+}
+const setTile = (k, s) => `${s.rims ? '🛞 на джанти' : 'без джанти'}`;
+const freeCount = (k, size) => DB.free.filter(f => f.k === k && f.size === size).reduce((a, f) => a + f.tires.length, 0);
+function freeCard(f) {
+  const n = f.tires.length;
+  return `<div class="szc fset" style="cursor:default;--acc:${f.k === 'winter' ? 'var(--win)' : f.k === 'all' ? 'var(--teal)' : 'var(--org)'}">
+    <span class="sz">${ICO[f.k]} ${SETN[f.k]} · ${esc(f.size)}</span>
+    <span class="mut">${esc(f.brand)} · DOT ${esc(f.dot)}${ageOf(f) >= 6 ? ` <b style="color:var(--warn)">(${ageOf(f)} г.)</b>` : ''} · ${f.tread} мм</span>
+    <span class="mut">${f.rims ? '🛞 на джанти' : 'без джанти'}${f.kmRun ? ' · ' + kmFmt(f.kmRun) : ' · нови'}</span>
+    <span class="dots4" aria-label="${n} гуми">${[0, 1, 2, 3].map(i => `<i class="${i < n ? '' : 'none'}"></i>`).join('')}<b style="margin-left:6px;font-size:13px">${n} бр.</b></span>
+    <span class="mut">${f.from ? 'от ' + plateHtml(f.from) : esc(f.note || 'добавени ръчно')}</span>
+    ${isAdmin() ? `<span class="row2"><button onclick="go('assign',{fid:'${f.id}'})">Дай на кола</button><button class="${S.confirmDrop === f.id ? 'cfm' : 'red'}" onclick="dropFree('${f.id}')">${S.confirmDrop === f.id ? '✔ Потвърди' : 'Премахни'}</button></span>` : ''}</div>`;
+}
+function orderList() {
+  const m = {};
+  DB.cars.filter(c => !isTodo(c)).forEach(c => kinds(c).forEach(k => {
+    const n = need(c.sets[k]); if (!n) return;
+    const key = k + '|' + c.size; m[key] = m[key] || { k, size: c.size, n: 0, cars: 0 }; m[key].n += n; m[key].cars++;
+  }));
+  return Object.values(m).sort((a, b) => b.n - a.n);
+}
+function sizeList() {
+  const m = {};
+  DB.cars.filter(c => c.size).forEach(c => {
+    const x = m[c.size] = m[c.size] || { size: c.size, cars: 0, win: 0, sum: 0, all: 0, want: 0, got: 0 };
+    x.cars++; if (c.sets.winter) x.win++; if (c.sets.summer) x.sum++; if (c.sets.all) x.all++;
+    kinds(c).forEach(k => { x.want++; if (c.sets[k]) x.got++; });
+  });
+  return Object.values(m).sort((a, b) => b.cars - a.cars || a.size.localeCompare(b.size));
+}
+function sizesCard() {
+  return `<div class="szgrid">${sizeList().map(x => {
+    const miss = x.want - x.got;
+    return `<button class="szc" style="--acc:var(--blue)" onclick="go('cars',{size:'${esc(x.size)}',tab:'all',q:''})">
+      <span class="sz">${esc(x.size)}</span>
+      <span class="n">${x.cars}<small>${x.cars === 1 ? 'кола' : 'коли'}</small></span>
+      <span class="sets"><span>❄️ ${x.win}</span><span>☀️ ${x.sum}</span>${x.all ? `<span>🌦️ ${x.all}</span>` : ''}</span>
+      ${miss ? `<span class="badge b-bad">липсват ${miss} к-та</span>` : '<span class="badge b-ok">всички пълни</span>'}
+    </button>`;
+  }).join('')}</div>`;
+}
+function orderCard() {
+  const L = orderList(); if (!L.length) return '<div class="card mut">Всички коли имат пълни комплекти 👍</div>';
+  return `<div class="szgrid">${L.map(o => `<button class="szc" style="--acc:${o.k === 'winter' ? 'var(--win)' : 'var(--org)'}" onclick="go('cars',{size:'${esc(o.size)}',tab:'low',q:''})">
+    <span class="sz">${ICO[o.k]} ${SETN[o.k]}</span>
+    <span class="mut">${esc(o.size || 'без размер')}</span>
+    <span class="n" style="color:var(--bad)">${o.n}<small>бр.</small></span>
+    <span class="mut">за ${o.cars} ${o.cars === 1 ? 'кола' : 'коли'}</span>${freeCount(o.k, o.size) ? `<span class="badge b-ok">свободни в склада: ${freeCount(o.k, o.size)} бр.</span>` : ''}</button>`).join('')}</div>`;
+}
+// карти със статистика: [етикет, стойност, подзаглавие, цвят]
+function statGrid(items) {
+  return `<div class="szgrid">${items.map(x => `<div class="szc" style="cursor:default;--acc:${x[3] || 'var(--line)'}"><span class="sets" style="color:var(--mut)">${x[0]}</span><span class="n" style="color:${x[3] || 'var(--txt)'}">${x[1]}</span>${x[2] ? `<span class="mut">${x[2]}</span>` : ''}</div>`).join('')}</div>`;
+}
+
+// премества комплект на кола в свободни гуми (ако има годни)
+const BASE = { norims: 'Монтаж и демонтаж', rims: 'Смяна на гуми с джанти' };
+const pricesOf = sv => (DB.prices && DB.prices[sv]) || { norims: 0, rims: 0 };
+/* ---------- връзка със сървъра (Google Apps Script) ---------- */
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRoEI135mh8fscjhUUvCd6TFUmfF4xEltqvsgIggGjMg7fohaBgC8MprsWvCgAKgZ1wg/exec';   // Apps Script → Внедряване → адресът, който завършва на /exec
+let TOKEN = '';
+try { const q = new URLSearchParams(location.search).get('t'); TOKEN = q || localStorage.getItem('gumi_t') || ''; if (q) localStorage.setItem('gumi_t', q); }
+catch (e) { TOKEN = new URLSearchParams(location.search).get('t') || ''; }
+async function api(a, d = {}) {
+  document.body.classList.add('loading');
+  try {
+    let r, j;
+    try { r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ t: TOKEN, a, d }) }); }
+    catch (e) { throw new Error('Няма връзка със сървъра. Провери интернета и опитай пак.'); }
+    try { j = await r.json(); } catch (e) { throw new Error('Сървърът върна грешен отговор. Провери API_URL и внедряването (Достъп: Всеки).'); }
+    if (!j.ok) throw new Error(j.error || 'Грешка');
+    if (j.db) { DB = j.db; TARGET = DB.target || TARGET; ROT_KM = DB.rotKm || ROT_KM; }
+    if (j.me) { USER.name = j.me.name; USER.role = j.me.role; }
+    return j.res;
+  } finally { document.body.classList.remove('loading'); }
+}
+
+/* ---------- Интерфейс ---------- */
+const S = { view: 'home', sel: '', trip: '', q: '', tab: 'all', fromTrip: '', size: '' };
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const eur = n => (n === '' || n == null) ? '—' : Number(n).toFixed(2) + ' €';
+const fmt = d => String(d).split('-').reverse().join('.');
+const isAdmin = () => USER.role === 'admin';
+function toast(msg, err) { const t = $('toast'); t.textContent = msg; t.className = 'toast' + (err ? ' err' : ''); t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => t.hidden = true, 2800); }
+function go(view, extra) { Object.assign(S, extra || {}, { view }); render(); window.scrollTo(0, 0); }
+
+function header(title, back) {
+  let h = `<div class="top">${back ? `<button class="back" aria-label="Назад" onclick="go('${back}')">‹</button>` : ''}<h1>${esc(title)}</h1><small>${esc(USER.name)}</small></div>`;
+  if (!back) {
+    const tot = DB.cars.length || 1, win = DB.cars.filter(c => c.allSeason || c.mounted === TARGET).length;
+    const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).length, LG = legalInfo();
+    const toBuy = orderList().reduce((a, o) => a + o.n, 0);
+    h += `<div class="counters">
+      <div class="cnt"><b>${DB.cars.length}</b><span>Коли</span></div>
+      <div class="cnt"><b>${win}</b><span>${TARGET === 'winter' ? 'Зимни' : 'Летни'} / всесез.</span></div>
+      <div class="cnt"><b>${bad}</b><span>С проблем</span></div>
+      <div class="cnt"><b>${toBuy}</b><span>Гуми за купуване</span></div></div>
+      <div class="season" style="display:flex;align-items:center;gap:12px"><div class="ring" style="--p:${Math.round(win / tot * 100)}"><b>${Math.round(win / tot * 100)}%</b></div><div><div style="font-weight:800;font-size:15px">${TARGET === 'winter' ? '❄️ Сезон зима' : '☀️ Сезон лято'}</div><div style="opacity:.85">готови ${win} от ${DB.cars.length} коли · ${LG.inPeriod ? 'задължителни до ' + fmt(LG.end).slice(0, 5) : 'задължителни от 15.11 · след ' + LG.days + ' дни'}</div></div></div>`;
+  }
+  $('hdr').innerHTML = h;
+}
+
+function carBadges(c) {
+  const it = itemOf(c.id); let b = '';
+  if (it && it.step === 1) b += '<span class="badge b-warn">В буса</span>';
+  else if (it && it.step === 2) b += `<span class="badge b-warn">${SETN[other(TARGET)]} за склада</span>`;
+  else b += (c.allSeason ? '<span class="badge b-soft">🌦️ Всесезонни</span>' : c.mounted === 'winter' ? '<span class="badge b-win">На зимни</span>' : '<span class="badge b-sum">На летни</span>');
+  issues(c).forEach(x => b += `<span class="badge b-${x.lvl}">${x.txt}</span>`);
+  b += rotBadge(c);
+  return `<div class="bdg">${b}</div>`;
+}
+const EU_STARS = '<svg viewBox="0 0 20 20" aria-hidden="true">' + Array.from({ length: 12 }, (_, i) => { const a = i * Math.PI / 6; return `<circle cx="${(10 + 7 * Math.sin(a)).toFixed(2)}" cy="${(10 - 7 * Math.cos(a)).toFixed(2)}" r="1.25" fill="#ffcc00"/>`; }).join('') + '</svg>';
+const plateHtml = (p, big) => `<span class="plt${big ? ' big' : ''}" role="img" aria-label="Номер ${esc(p)}"><i>${EU_STARS}<b>BG</b></i><span>${esc(p)}</span></span>`;
+function carTile(c, sub, extraBadge) {
+  const it = itemOf(c.id);
+  const st = it && it.step === 1 ? '<span class="badge b-warn">В буса</span>' : it && it.step === 2 ? `<span class="badge b-warn">${SETN[other(TARGET)]} за склада</span>`
+    : (c.allSeason ? '<span class="badge b-soft">🌦️ Всесезонни</span>' : c.mounted === 'winter' ? '<span class="badge b-win">На зимни</span>' : '<span class="badge b-sum">На летни</span>');
+  const iss = extraBadge != null ? extraBadge : issues(c).map(x => `<span class="badge b-${x.lvl}">${x.txt}</span>`).join('') + rotBadge(c);
+  const acc = issues(c).some(x => x.lvl === 'bad') ? 'var(--bad)' : c.allSeason ? 'var(--teal)' : c.mounted === 'winter' ? 'var(--win)' : 'var(--org)';
+  return `<button class="szc" style="--acc:${acc}" onclick="openCar('${c.id}')">${plateHtml(c.plate)}<span class="mut">${esc(c.model)}<br>${esc(sub || c.size || 'няма размер')}</span><span class="tb">${isTodo(c) ? '<span class="badge b-warn">📝 въведи гумите</span>' : st + iss}</span></button>`;
+}
+const carGrid = (L, f) => `<div class="szgrid">${L.map(f || (c => carTile(c))).join('')}</div>`;
+function carCard(c, sub) {
+  return `<div class="card mc" onclick="openCar('${c.id}')"><div class="ic">🚗</div>
+    <div class="t"><b class="plate">${esc(c.plate)}</b><div class="mut">${esc(c.model)} · ${esc(c.size)}</div>${sub ? `<div class="mut">${sub}</div>` : ''}</div>${carBadges(c)}</div>`;
+}
+function carSelect(onlyWaiting) {
+  const list = DB.cars.slice().sort((a, b) => a.plate.localeCompare(b.plate));
+  return `<label for="f_car">Кола</label><select id="f_car" onchange="S.sel=this.value;render()"><option value="">— избери —</option>${
+    list.map(c => `<option value="${c.id}" ${S.sel === c.id ? 'selected' : ''}>${esc(c.plate)} · ${esc(c.model)}</option>`).join('')}</select>`;
+}
+const opts = (arr, cur) => arr.map(x => `<option ${x === cur ? 'selected' : ''}>${esc(x)}</option>`).join('');
+const STEP_TXT = ['Чака', 'В буса', 'Сменени', 'Готово'];
+function dots(step) { return `<div class="dots">${[1, 2, 3].map(k => `<i class="${step >= k ? (step === 3 ? 'fin' : 'on') : ''}"></i>`).join('')}</div>`; }
+function tripSummary(t) {
+  const n = t.items.length, s = k => t.items.filter(x => x.step >= k).length;
+  return `натоварени ${s(1)} · сменени ${s(2)} · прибрани ${s(3)} от ${n}`;
+}
+
+const V = {
+  home() {
+    header('Гуми Автопарк');
+    // бързи действия: само неща, които ги няма в долните табове
+    const tiles = [
+      ['🔧', 'Смяна', "go('change',{sel:'',fromTrip:''})", 'var(--org)'],
+      ['🚚', 'Нов рейс', "go('newTrip',{picked:[]})", 'var(--blue)'],
+      ['🛞', 'Свободни гуми', "go('addFree')", 'var(--teal)'],
+      ['🧾', 'Разход', "go('expense',{sel:''})", 'var(--bad)']
+    ];
+    let h = isAdmin() ? `<div class="tiles" style="grid-template-columns:repeat(4,1fr)">${tiles.map(t => `<button class="tile" style="background-color:${t[3]}" onclick="${t[2]}"><i>${t[0]}</i>${t[1]}</button>`).join('')}</div>` : '';
+    h = legalBanner() + h;
+    const todo = DB.cars.filter(isTodo);
+    if (todo.length && isAdmin()) h += `<h2>Въведи гумите (${todo.length})</h2><div class="mut" style="margin:-4px 0 10px">Отвори колата, сложи размера и въведи гумите, които има.</div>`
+      + carGrid(todo.slice(0, 6), c => carTile(c, c.size || 'няма размер')) + (todo.length > 6 ? `<button class="btn sec" style="margin-top:0" onclick="go('cars',{tab:'todo',size:'',q:''})">Виж всички ${todo.length}</button>` : '');
+    h += `<h2>Гуми за купуване</h2>` + orderCard();
+    h += `<h2>Коли по размер гуми</h2>` + sizesCard();
+    const open = DB.trips.filter(t => !tripDone(t));
+    h += `<h2>Рейсове за сервиз (${open.length})</h2>` + (open.length ? tripGrid(open) : '<div class="card mut">Няма активни рейсове.</div>');
+    const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).sort((a, b) => issues(b).filter(x => x.lvl === 'bad').length - issues(a).filter(x => x.lvl === 'bad').length);
+    if (bad.length) h += `<h2>Проблеми с гумите (${bad.length})</h2>` + carGrid(bad);
+    const rot = DB.cars.filter(c => rotDue(c) != null).sort((a, b) => rotDue(a) - rotDue(b));
+    if (rot.length) h += `<h2>За ротация предни ↔ задни (${rot.length})</h2>` + carGrid(rot, c => carTile(c, `${SETN[c.mounted]} · ${rotTxt(rotDue(c))}`, `<span class="badge ${rotDue(c) < 0 ? 'b-bad' : 'b-warn'}">🔄 ${rotDue(c) < 0 ? 'просрочена' : 'скоро'}</span>`));
+    const waiting = DB.cars.filter(c => !isTodo(c) && !c.allSeason && c.mounted !== TARGET && !tripOf(c.id));
+    h += `<h2>Чакат смяна, без рейс (${waiting.length})</h2>` + carGrid(waiting.slice(0, 8), c => carTile(c, c.size + ' · ' + c.service));
+    if (waiting.length > 8) h += `<button class="btn sec" style="margin-top:0" onclick="go('cars',{tab:'wait'})">Виж всички ${waiting.length}</button>`;
+    return h;
+  },
+
+  trips() {
+    header('Натоварване', 'home');
+    let h = isAdmin() ? `<button class="btn" style="margin:0 0 12px" onclick="go('newTrip',{picked:[]})">+ Нов рейс</button>` : '';
+    const open = DB.trips.filter(t => !tripDone(t)), done = DB.trips.filter(tripDone);
+    h += open.length ? tripGrid(open) : '<div class="card mut">Няма активни рейсове.</div>';
+    if (done.length) h += '<h2>Приключени</h2>' + tripGrid(done);
+    return h;
+  },
+
+  trip() {
+    const t = DB.trips.find(x => x.id === S.trip); if (!t) return go('trips');
+    header(`${t.bus} → ${t.service}`, 'trips');
+    let h = `<div class="card"><div class="kv"><span>Дата</span><b>${fmt(t.date)}</b></div><div class="kv"><span>Карат се</span><b>${SETN[TARGET]} гуми</b></div><div class="kv"><span>Връщат се в склада</span><b>${SETN[other(TARGET)]} гуми</b></div><div class="kv"><span>Прогрес</span><b>${tripSummary(t)}</b></div></div>
+      <div class="mut" style="margin:4px 0 10px">Натисни при всяка стъпка: натоварих → сменени (попълва км и протектор) → прибрах в склада.</div>`;
+    h += t.items.map(it => {
+      const c = carById(it.carId), ts = c.sets[TARGET] || {};
+      const btn = it.step === 3 ? `<button class="done" disabled>✔ Готово</button>`
+        : it.step === 1 ? `<button onclick="doChange('${t.id}','${c.id}')">Сменени</button>`
+        : `<button onclick="advance('${t.id}','${c.id}')">${it.step === 0 ? 'Натоварих' : 'Прибрах'}</button>`;
+      return `<div class="card"><div class="step"><div class="t" onclick="openCar('${c.id}')" style="cursor:pointer">${plateHtml(c.plate)} <span class="badge ${it.step === 3 ? 'b-ok' : it.step ? 'b-warn' : 'b-soft'}">${STEP_TXT[it.step]}</span>
+        <div class="mut">${esc(c.model)} · ${esc(ts.size || c.size)} · ${esc(ts.brand || '—')}</div>${ts.rims ? '<span class="badge b-soft">🛞 на джанти</span>' : '<span class="badge b-warn">без джанти · монтаж</span>'}</div>${btn}</div>${dots(it.step)}</div>`;
+    }).join('');
+    return h;
+  },
+
+  newTrip() {
+    header('Нов рейс', 'trips');
+    const pool = DB.cars.filter(c => !c.allSeason && c.mounted !== TARGET && !tripOf(c.id) && c.sets[TARGET]);
+    const noSet = DB.cars.filter(c => !c.allSeason && c.mounted !== TARGET && !c.sets[TARGET]).length;
+    let h = `<div class="row"><div><label for="f_bus">Бус</label><select id="f_bus">${opts(DB.buses)}</select></div>
+      <div><label for="f_srv">Сервиз</label><select id="f_srv">${opts(DB.services)}</select></div></div>
+      <label for="f_date">Дата</label><input type="date" id="f_date" value="${dayShift(1)}">
+      ${noSet ? `<div class="calc" style="background:var(--badbg)">${noSet} коли нямат ${SETN[TARGET].toLowerCase()} гуми и не са в списъка. Добави им комплект от картата на колата.</div>` : ''}
+      <h2>Коли за рейса (${S.picked.length} избрани)</h2><div class="card">`;
+    h += pool.map(c => `<label class="chk"><input type="checkbox" ${S.picked.includes(c.id) ? 'checked' : ''} onchange="togglePick('${c.id}')"><span style="flex:1"><b class="plate">${esc(c.plate)}</b> <span class="mut">${esc(c.model)} · ${esc(c.service)} · ${c.sets[TARGET].rims ? 'джанти' : 'без джанти'}</span></span></label>`).join('') || '<div class="mut">Всички коли са сменени или вече са в рейс.</div>';
+    return h + `</div><button class="btn" onclick="saveTrip()">Създай рейса</button>`;
+  },
+
+  change() {
+    header('Смяна на гуми', S.fromTrip ? 'trip' : 'home');
+    const c = carById(S.sel);
+    let h = carSelect();
+    if (c && c.allSeason) return h + `<div class="calc">🌦️ Колата е с всесезонни гуми и не се сменя сезонно.</div>`;
+    if (c && !c.sets[other(c.mounted)]) {
+      h += `<div class="calc" style="background:var(--badbg)">Колата няма ${SETN[other(c.mounted)].toLowerCase()} гуми. Първо добави комплект.</div>
+        <button class="btn" onclick="go('newTires',{nk:'${other(c.mounted)}'})">+ Добави ${SETN[other(c.mounted)].toLowerCase()} гуми</button>`;
+    } else if (c) {
+      const put = other(c.mounted);
+      h += `<div class="calc">Сваляме <b>${SETN[c.mounted].toLowerCase()}</b> (${c.sets[c.mounted].tread} мм), слагаме <b>${SETN[put].toLowerCase()}</b> (${c.sets[put].tread} мм)<br>Последно: ${(c.km || 0).toLocaleString('bg-BG')} км</div>
+        <div class="row"><div><label for="f_date">Дата</label><input type="date" id="f_date" value="${todayStr()}"></div><div><label for="f_srv">Сервиз</label><select id="f_srv" onchange="S.billSvc=this.value;$('bill').innerHTML=billRows(this.value,S.billBase)">${opts(DB.services, S.billSvc || c.service)}</select></div></div>
+        <label for="f_km">Километри</label><input id="f_km" inputmode="numeric" value="${kmMan(c) ? '' : (c.odo || '')}" placeholder="${kmMan(c) ? 'км от таблото' + (c.km ? ', над ' + c.km.toLocaleString('bg-BG') : '') : ''}"><div class="mut" style="margin-top:4px">${kmMan(c) ? (c.manual ? 'Колата не е в пътната книжка' : 'В пътната книжка още няма км') + ' — въведи км от таблото.' : 'Попълнено от пътната книжка. С ' + SETN[c.mounted].toLowerCase() + ' са изминати ' + kmFmt(kmOf(c, c.mounted)) + '.'}</div>
+        <div class="row"><div><label for="f_on">Протектор ${SETN[put].toLowerCase()} (мм)</label><input id="f_on" inputmode="decimal" value="${c.sets[put].tread}"></div>
+        <div><label for="f_off">Протектор ${SETN[c.mounted].toLowerCase()} (мм)</label><input id="f_off" inputmode="decimal" placeholder="измери"></div></div>
+        <label class="chk" style="border:0"><input type="checkbox" id="f_rot" ${rotLeft(c, put) <= 3000 ? 'checked' : ''}> 🔄 Ротация при монтажа (предни ↔ задни)<span class="mut" style="margin-left:auto">${SETN[put].toLowerCase()}: ${rotTxt(rotLeft(c, put))}</span></label>
+        <label>Какво е правено</label><div class="card bill" id="bill">${billRows(S.billSvc || c.service, c.sets[put].rims ? 'rims' : 'norims')}</div>
+        <label for="f_note">Бележка</label><textarea id="f_note" placeholder="напр. сменен вентил, баланс"></textarea>
+        <button class="btn" style="background:var(--org)" onclick="saveChange()">Запиши смяната</button>`;
+    }
+    return h;
+  },
+
+  expense() {
+    header('Разход', 'home');
+    return carSelect() + `<div class="row"><div><label for="f_type">Вид</label><select id="f_type"><option value="repair">Ремонт</option><option value="buy">Нови гуми</option><option value="other">Друго</option></select></div>
+      <div><label for="f_date">Дата</label><input type="date" id="f_date" value="${todayStr()}"></div></div>
+      <label for="f_text">Какво</label><input id="f_text" placeholder="напр. спукана гума, 4 бр. зимни 205/55 R16">
+      <div class="row"><div><label for="f_srv">Сервиз</label><select id="f_srv">${opts(DB.services)}</select></div><div><label for="f_cost">Сума (€)</label><input id="f_cost" inputmode="decimal"></div></div>
+      <button class="btn" style="background:var(--bad)" onclick="saveExpense()">Запиши разхода</button>`;
+  },
+
+  cars() {
+    header('Коли', 'home');
+    const q = S.q.toLowerCase();
+    const f = { all: () => true, todo: isTodo, wait: c => !c.allSeason && c.mounted !== TARGET, low: c => issues(c).length, rot: c => rotDue(c) != null };
+    const list = DB.cars.filter(f[S.tab]).filter(c => !S.size || c.size === S.size).filter(c => !q || [c.plate, c.model, c.driver].join(' ').toLowerCase().includes(q)).sort((a, b) => a.plate.localeCompare(b.plate));
+    let h = (isAdmin() ? `<div class="row" style="margin-bottom:12px"><button class="btn" style="margin:0" onclick="go('newCar')">+ Кола</button><button class="btn sec" style="margin:0" onclick="refreshRoad()">🔄 Обнови</button></div><div class="mut" style="margin:-4px 0 12px">Колите от пътната книжка идват сами (🔄 Обнови ги взима веднага). С „+ Кола“ добавяш само коли, които ги няма там.</div>` : '') + `<input class="search" id="f_q" placeholder="Търси по номер, модел, шофьор…" value="${esc(S.q)}" oninput="S.q=this.value;render();$('f_q').focus();$('f_q').setSelectionRange(this.value.length,this.value.length)">
+      <label for="f_sz" style="margin-top:0">Размер</label><select id="f_sz" style="margin-bottom:4px" onchange="S.size=this.value;render()"><option value="">Всички размери</option>${sizeList().map(x => `<option value="${esc(x.size)}" ${S.size === x.size ? 'selected' : ''}>${esc(x.size)} (${x.cars} коли)</option>`).join('')}</select>
+      <div class="tabs">${[['all', 'Всички']].concat(DB.cars.some(isTodo) ? [['todo', 'Нови']] : [], [['wait', 'Смяна'], ['low', 'Проблеми'], ['rot', 'Ротация']]).map(t => `<button class="${S.tab === t[0] ? 'on' : ''}" onclick="S.tab='${t[0]}';render()">${t[1]}</button>`).join('')}</div>
+      <div class="mut" style="margin-bottom:8px">${list.length} ${list.length === 1 ? 'кола' : 'коли'}${S.size ? ' с размер ' + esc(S.size) : ''}</div>`;
+    return h + (list.length ? carGrid(list, c => carTile(c, c.size + ' · ' + c.driver)) : '<div class="center">Няма коли</div>');
+  },
+
+  car() {
+    const c = carById(S.sel); if (!c) return go('cars');
+    header(c.plate, 'cars');
+    const it = itemOf(c.id), t = tripOf(c.id);
+    const where = k => {
+      if (k === c.mounted) return '<span class="badge b-ok">На колата</span>';
+      if (it && k === TARGET && it.step === 1) return `<span class="badge b-warn">В ${esc(t.bus)}</span>`;
+      if (it && k !== TARGET && it.step === 2) return `<span class="badge b-warn">В ${esc(t.service)}</span>`;
+      return '<span class="badge b-soft">В склада</span>';
+    };
+    const setCard = k => {
+      const s = c.sets[k], ico = ICO[k];
+      if (!s) return `<div class="set miss"><div class="hd"><span>${ico} ${SETN[k]}</span><span class="badge b-bad">Няма комплект</span></div>
+        <div class="mut">Трябват 4 гуми ${esc(c.size)}</div>${isAdmin() ? `<div class="setbtns"><button onclick="go('newTires',{nk:'${k}'})">+ Добави ${SETN[k].toLowerCase()} гуми</button></div>` : ''}</div>`;
+      const st = treadState(s, k), w = Math.min(100, Math.round(numv(s.tread) / 9 * 100));
+      const col = st === 'bad' ? 'var(--bad)' : st === 'warn' ? 'var(--warn)' : (k === 'winter' ? 'var(--win)' : 'var(--org)');
+      const n = need(s), hv = have(s);
+      return `<div class="set ${k === c.mounted ? 'mnt' : ''} ${k === 'summer' ? 'sum' : ''}"><div class="hd"><span>${ico} ${SETN[k]} · ${hv}/4 бр.</span>${where(k)}</div>
+        <div class="mut">${esc(s.size)} · ${esc(s.brand)} · DOT ${s.dot} ${ageOf(s) >= 6 ? `<b style="color:${ageOf(s) >= 10 ? 'var(--bad)' : 'var(--warn)'}">(${ageOf(s)} г. — стари)</b>` : `(${ageOf(s)} г.)`}</div>
+        <div class="setmeta"><button class="rimb ${s.rims ? 'on' : ''}" ${isAdmin() ? '' : 'disabled'} onclick="toggleRims('${c.id}','${k}')">${s.rims ? '🛞 На джанти' : '○ Без джанти'}</button><span>🛣️ Изминати <b>${kmFmt(kmOf(c, k))}</b></span></div>
+        ${(() => { const l = rotLeft(c, k), col = l < 0 ? 'var(--bad)' : l <= 1000 ? 'var(--warn)' : 'var(--mut)'; return `<div class="setmeta"><span>🔄 Ротация: <b style="color:${col}">${rotTxt(l)}</b>${k === c.mounted ? '' : ' каране'}</span>${isAdmin() ? `<button class="rimb ${S.confirmRot === c.id + k ? 'cfmr' : ''}" onclick="rotate('${c.id}','${k}')">${S.confirmRot === c.id + k ? '✔ Потвърди ротацията' : 'Направих ротация'}</button>` : ''}</div>`; })()}
+        <div class="tread"><i style="width:${w}%;background:${col}"></i></div>
+        <div class="mut">Протектор <b style="color:${col}">${s.tread} мм</b> · лимит ${LIMIT[k]} мм</div>
+        <div class="axle">${s.tires.map((t, i) => `<button class="tire ${t}" style="grid-column:${i % 2 ? 3 : 1};grid-row:${i < 2 ? 1 : 2}" aria-label="${POSF[i]}: ${TST[t]}" ${isAdmin() ? '' : 'disabled'} onclick="cycleTire('${c.id}','${k}',${i})">${POS[i]}<span>${TST[t]}</span></button>`).join('')}<div class="body">${CAR_SVG}</div></div>
+        ${n && isAdmin() ? `<div class="setbtns"><button onclick="go('newTires',{nk:'${k}'})">+ Нови гуми (${n} бр.)</button></div>` : ''}</div>`;
+    };
+    const editCard = isAdmin() ? `<div class="card" style="display:flex;flex-direction:column;gap:2px"><b style="font-size:14px">Данни за колата</b>
+        <div class="row"><div><label for="e_size">Размер на гумите</label><input id="e_size" list="sizes3" value="${esc(c.size)}" placeholder="напр. 205/55 R16"></div><div><label for="e_srv">Сервиз</label><select id="e_srv">${opts(DB.services, c.service)}</select></div></div>
+        ${c.allSeason ? '' : `<label for="e_mnt">Кои гуми са на колата сега</label><select id="e_mnt"><option value="summer" ${c.mounted === 'summer' ? 'selected' : ''}>Летни</option><option value="winter" ${c.mounted === 'winter' ? 'selected' : ''}>Зимни</option></select>`}
+        ${c.manual ? `<div class="row"><div><label for="e_model">Модел</label><input id="e_model" value="${esc(c.model)}"></div><div><label for="e_drv">Шофьор</label><input id="e_drv" value="${esc(c.driver)}"></div></div>` : '<div class="mut" style="margin-top:6px">Модел, шофьор и км идват от пътната книжка.</div>'}
+        <datalist id="sizes3">${sizeList().map(x => `<option value="${esc(x.size)}">`).join('')}</datalist>
+        <button class="btn" style="margin-top:10px" onclick="saveCarEdit('${c.id}')">Запази данните</button></div>` : '';
+    let h = `<div class="card hero">${plateHtml(c.plate, true)}<div class="mut">${esc(c.model)} · ${esc(c.size)}</div><div class="tb" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${carBadges(c).replace('class="bdg"', 'style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center"')}</div></div>
+      <div class="card"><div class="kv"><span>Модел</span><b>${esc(c.model)}</b></div><div class="kv"><span>Размер</span><b>${esc(c.size)}</b></div><div class="kv"><span>${kmMan(c) ? 'Км (въведени ръчно)' : 'Км по пътната книжка'}</span><b>${(c.odo || c.km || 0).toLocaleString('bg-BG')}</b></div><div class="kv"><span>Шофьор</span><b>${esc(c.driver)}</b></div><div class="kv"><span>Сервиз</span><b>${esc(c.service)}</b></div><div class="kv"><span>Км при последна смяна</span><b>${(c.km || 0).toLocaleString('bg-BG')}</b></div></div>
+      ${kmMan(c) ? `<div class="calc">${c.manual ? 'Колата не е в пътната книжка.' : 'В пътната книжка още няма км за тази кола.'} Км се пишат при смяна${isAdmin() ? ' или тук:' : '.'}${isAdmin() ? `<div class="row" style="margin-top:8px"><input id="f_upkm" inputmode="numeric" placeholder="км от таблото"><button class="btn" style="margin:0" onclick="updateKm('${c.id}')">Обнови км</button></div>` : ''}</div>` : ''}
+      ${!c.size ? editCard : ''}
+      ${c.allSeason ? setCard('all') : setCard(c.mounted) + setCard(other(c.mounted))}
+      ${isAdmin() ? `<div class="card" style="display:flex;flex-direction:column;gap:8px"><b style="font-size:14px">Вид гуми</b><div class="tabs" style="margin:0">${[[false, '☀️❄️ Летни + зимни'], [true, '🌦️ Всесезонни']].map(([v, l]) => `<button class="${!!c.allSeason === v ? 'on' : ''}" onclick="setAllSeason('${c.id}',${v})">${l}</button>`).join('')}</div>${S.confirmAS === c.id ? `<div class="calc" style="background:var(--warnbg);color:var(--warntx)">Сегашните гуми отиват в свободни. <button class="btn cfm" style="margin-top:8px" onclick="setAllSeason('${c.id}',${!c.allSeason},1)">✔ Потвърди</button></div>` : ''}</div>` : ''}
+      ${c.size ? editCard : ''}
+      ${isAdmin() ? '<div class="mut" style="margin:-2px 0 6px">Натисни гума, за да смениш състоянието: годна → за смяна → брак.</div>' : ''}`;
+    if (isAdmin()) h += `<div class="row"><button class="btn" style="background:var(--org);margin-top:4px" onclick="go('change',{fromTrip:''})">🔧 Смяна</button><button class="btn sec" style="margin-top:4px" onclick="go('expense')">🧾 Разход</button></div>
+      ${c.manual ? `<button class="btn ${S.confirmRm === c.id ? 'cfm' : 'sec'}" style="margin-top:8px;font-size:14px" onclick="removeCar('${c.id}')">${S.confirmRm === c.id ? 'Натисни пак: гумите отиват в свободни' : 'Премахни колата'}</button>` : ''}`;
+    const hs = DB.history.filter(x => x.carId === c.id).sort((a, b) => b.date.localeCompare(a.date));
+    const tot = hs.reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0);
+    const yr = hs.filter(x => x.date >= YEAR + '-01-01').reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0);
+    h += `<h2>История · разходи ${eur(yr)} тази година · ${eur(tot)} общо</h2><div class="card">` + hs.map(x => `<div class="hist"><div class="d">${fmt(x.date)}</div><div style="flex:1">${esc(x.text)}${x.service ? ' · ' + esc(x.service) : ''}${x.km ? `<div class="mut">${Number(x.km).toLocaleString('bg-BG')} км</div>` : ''}${x.note ? `<div class="mut">${esc(x.note)}</div>` : ''}</div><div class="mut">${x.cost ? eur(x.cost) : ''}</div></div>`).join('') + '</div>';
+    return h;
+  },
+
+  store() {
+    header('Склад', 'home');
+    const inStore = k => DB.cars.filter(c => {
+      if (!c.sets[k] || c.mounted === k) return false;
+      const it = itemOf(c.id);
+      if (it && k === TARGET && it.step >= 1) return false;
+      if (it && k !== TARGET && it.step === 2) return false;
+      return true;
+    });
+    const w = inStore('winter'), s = inStore('summer'), fr = DB.free;
+    const tab = S.stab || 'winter';
+    let h = statGrid([
+      ['❄️ Зимни в склада', w.length + '<small>к-та</small>', '', 'var(--win)'],
+      ['☀️ Летни в склада', s.length + '<small>к-та</small>', '', 'var(--org)'],
+      ['📦 Свободни гуми', fr.reduce((a, f) => a + f.tires.length, 0) + '<small>бр.</small>', fr.length + ' комплекта, без кола', 'var(--teal)']
+    ]) + `
+      <div class="tabs">${[['winter', '❄️ Зимни ' + w.length], ['summer', '☀️ Летни ' + s.length], ['free', '📦 Свободни ' + fr.length]].map(t => `<button class="${tab === t[0] ? 'on' : ''}" onclick="S.stab='${t[0]}';render()">${t[1]}</button>`).join('')}</div>`;
+    if (tab === 'free') {
+      h += `<div class="mut" style="margin-bottom:8px">Гуми без кола: от махнати коли или купени резервни. Остават тук, докато не ги дадеш на кола или не ги премахнеш.</div>`;
+      if (isAdmin()) h += `<button class="btn" style="margin:0 0 12px;background:var(--teal)" onclick="go('addFree')">+ Добави свободни гуми</button>`;
+      return h + (fr.length ? `<div class="szgrid">${fr.map(freeCard).join('')}</div>` : '<div class="card mut">Няма свободни гуми.</div>');
+    }
+    const L = tab === 'winter' ? w : s;
+    h += `<div class="mut" style="margin-bottom:6px">Гумите са надписани с номера на колата, затова се търсят по номер.</div>`;
+    return h + carGrid(L.sort((a, b) => a.plate.localeCompare(b.plate)), c => { const x = setIssue(c, tab); return carTile(c, `${c.sets[tab].brand} · ${have(c.sets[tab])}/4 бр. · ${c.sets[tab].tread} мм · ${c.sets[tab].rims ? 'джанти' : 'без джанти'}`, x ? `<span class="badge b-${x.lvl}">${x.txt}</span>` : '<span class="badge b-ok">годни</span>'); });
+  },
+
+  settings() {
+    header('Настройки', 'report');
+    const T = S.set;
+    const list = (key, label, ph) => `<h2>${label}</h2><div class="card">${T[key].map((x, i) => `<div class="srow"><input value="${esc(x.name)}" placeholder="${ph}" oninput="S.set.${key}[${i}].name=this.value" aria-label="${label} ${i + 1}">${T[key].length > 1 ? `<button class="sdel" onclick="S.set.${key}.splice(${i},1);render()" aria-label="Махни">✕</button>` : ''}</div>`).join('')}
+      <button class="btn sec" style="margin-top:8px" onclick="S.set.${key}.push({old:'',name:''});render()">+ Добави</button></div>`;
+    let h = list('services', 'Сервизи', 'Име на сервиза') + list('buses', 'Бусове', 'напр. Бус 1 или номер');
+    h += `<h2>Уговорени цени за смяна (общо за колата)</h2>`;
+    h += T.services.filter(x => x.name).map(x => { const key = x.old || x.name; const P = T.prices[key] = T.prices[key] || { norims: 0, rims: 0 };
+      return `<div class="card"><b>${esc(x.name)}</b>${['norims', 'rims'].map(k => `<div class="prow"><div style="flex:1;min-width:0">${BASE[k]}<div class="mut">${k === 'rims' ? 'гумите са на джанти' : 'гумите са без джанти'}</div></div>
+        <input class="bp" inputmode="decimal" value="${P[k]}" oninput="S.set.prices['${esc(key)}'].${k}=this.value" aria-label="${BASE[k]} ${esc(x.name)}"><span class="bx">€</span></div>`).join('')}</div>`; }).join('');
+    h += `<h2>Допълнителни услуги за отметване</h2><div class="card">${T.extras.map((x, i) => `<div class="srow"><input value="${esc(x)}" oninput="S.set.extras[${i}]=this.value" aria-label="Услуга ${i + 1}"><button class="sdel" onclick="S.set.extras.splice(${i},1);render()" aria-label="Махни">✕</button></div>`).join('')}
+      <button class="btn sec" style="margin-top:8px" onclick="S.set.extras.push('');render()">+ Добави</button></div>`;
+    h += `<button class="btn" onclick="saveSettings()">Запази настройките</button>`;
+    if (!S.users) api('users').then(u => { S.users = u; if (S.view === 'settings') $('usersBox').innerHTML = usersHtml(); }).catch(e => toast(e.message, 1));
+    return h + `<h2>Потребители и линкове за вход</h2><div class="card" id="usersBox">${usersHtml()}</div>`;
+  },
+
+  newCar() {
+    header('Нова кола', 'cars');
+    return `<div class="calc">За коли, които ги няма в пътната книжка. Км се пишат ръчно при смяна.</div>
+      <div class="row"><div><label for="f_plate">Номер</label><input id="f_plate" placeholder="В 1234 АВ" autocapitalize="characters"></div><div><label for="f_model">Модел</label><input id="f_model" placeholder="напр. VW Golf"></div></div>
+      <label for="f_size">Размер на гумите</label><input id="f_size" list="sizes2" placeholder="напр. 205/55 R16"><datalist id="sizes2">${sizeList().map(x => `<option value="${esc(x.size)}">`).join('')}</datalist>
+      <div class="row"><div><label for="f_drv">Шофьор</label><input id="f_drv"></div><div><label for="f_srv">Сервиз</label><select id="f_srv">${opts(DB.services)}</select></div></div>
+      <div class="row"><div><label for="f_km">Км сега</label><input id="f_km" inputmode="numeric"></div><div><label for="f_kind">Гуми</label><select id="f_kind"><option value="">Летни + зимни</option><option value="1">Всесезонни</option></select></div></div>
+      <button class="btn" onclick="saveCar()">Добави колата</button>`;
+  },
+
+  addFree() {
+    header('Свободни гуми', 'store');
+    return `<div class="calc">Гуми, които не са на кола: купени резервни, останали от продадена кола и т.н.</div>
+      <div class="row"><div><label for="f_k">Сезон</label><select id="f_k"><option value="winter">Зимни</option><option value="summer">Летни</option><option value="all">Всесезонни</option></select></div>
+      <div><label for="f_n">Брой</label><select id="f_n"><option>4</option><option>3</option><option>2</option><option>1</option></select></div></div>
+      <label for="f_size">Размер</label><input id="f_size" list="sizes" placeholder="напр. 205/55 R16"><datalist id="sizes">${sizeList().map(x => `<option value="${esc(x.size)}">`).join('')}</datalist>
+      <div class="row"><div><label for="f_brand">Марка и модел</label><input id="f_brand"></div><div><label for="f_dot">DOT (година)</label><input id="f_dot" inputmode="numeric" value="2026"></div></div>
+      <div class="row"><div><label for="f_tread">Протектор (мм)</label><input id="f_tread" inputmode="decimal" value="8"></div><div><label for="f_kmr">Изминати км</label><input id="f_kmr" inputmode="numeric" placeholder="0 за нови"></div></div>
+      <label class="chk" style="border:0"><input type="checkbox" id="f_rims"> На джанти</label>
+      <label for="f_note">Бележка</label><input id="f_note" placeholder="напр. купени за резерва">
+      <button class="btn" style="background:var(--teal)" onclick="saveFree()">Добави в склада</button>`;
+  },
+
+  assign() {
+    const f = DB.free.find(x => x.id === S.fid); if (!f) return go('store', { stab: 'free' });
+    header('Дай на кола', 'store');
+    const same = DB.cars.filter(c => c.size === f.size && kinds(c).includes(f.k));
+    const score = c => !c.sets[f.k] ? 0 : need(c.sets[f.k]) ? 1 : 2;
+    same.sort((a, b) => score(a) - score(b) || a.plate.localeCompare(b.plate));
+    let h = `<div class="szgrid" style="grid-template-columns:1fr">${freeCard({ ...f, _noBtn: 1 }).replace(/<span class="row2">[\s\S]*?<\/span><\/div>$/, '</div>')}</div>
+      <h2>Коли с размер ${esc(f.size)} (${same.length})</h2>`;
+    if (!same.length) return h + '<div class="card mut">Няма коли с този размер.</div>';
+    h += `<div class="szgrid">${same.map(c => {
+      const s = c.sets[f.k], n = need(s);
+      const state = !s ? `<span class="badge b-bad">Няма ${SETN[f.k].toLowerCase()}</span>` : n ? `<span class="badge b-bad">${have(s)}/4 · за подмяна ${n}</span>` : '<span class="badge b-ok">пълен комплект</span>';
+      const btns = !s ? `<button onclick="assign('${c.id}','set')">Сложи</button>`
+        : n ? `<button onclick="assign('${c.id}','fill')">Допълни ${Math.min(n, f.tires.length)}</button><button class="sec" onclick="assign('${c.id}','set')">Замени</button>`
+        : `<button class="sec" onclick="assign('${c.id}','set')">Замени</button>`;
+      return `<div class="szc fset" style="cursor:default;--acc:${!s || n ? 'var(--bad)' : 'var(--line)'}">${plateHtml(c.plate)}<span class="mut">${esc(c.model)}</span>${state}<span class="row2">${btns}</span></div>`;
+    }).join('')}</div><div class="mut" style="margin-top:8px">„Замени“ връща стария комплект в свободни гуми.</div>`;
+    return h;
+  },
+
+  newTires() {
+    const c = carById(S.sel); if (!c) return go('cars');
+    const k = kinds(c).includes(S.nk) ? S.nk : kinds(c)[0], s = c.sets[k];
+    const ex = !s && S.exist !== false;   // първо въвеждане: по подразбиране са гумите, които колата вече има
+    header((ex ? 'Гуми · ' : 'Нови гуми · ') + c.plate, 'car');
+    let h = !s ? `<div class="tabs">${[[true, 'Гумите, които има'], [false, 'Купени нови']].map(([v, l]) => `<button class="${ex === v ? 'on' : ''}" onclick="S.exist=${v};render()">${l}</button>`).join('')}</div>` : '';
+    h += `<div class="calc">${s ? `${SETN[k]}: ${have(s)}/4 годни, ${need(s)} за подмяна (${s.tires.map((t, i) => t !== 'ok' ? POS[i] + ' ' + TST[t].toLowerCase() : '').filter(Boolean).join(', ')})`
+      : ex ? `Въведи ${SETN[k].toLowerCase()}те гуми, които колата вече има. После с натискане на гума отбелязваш коя е за смяна или брак.` : `Колата няма ${SETN[k].toLowerCase()} гуми — добавяш нов комплект.`}</div>
+      <div class="row"><div><label for="f_k">Комплект</label><select id="f_k" onchange="S.nk=this.value;render()">${kinds(c).map(x => `<option value="${x}" ${k === x ? 'selected' : ''}>${SETN[x]}</option>`).join('')}</select></div>
+      <div><label for="f_n">Брой</label><input id="f_n" inputmode="numeric" value="${s ? need(s) : 4}"></div></div>
+      <label for="f_size">Размер</label><input id="f_size" list="sizes4" value="${esc(s ? s.size : c.size)}" placeholder="напр. 205/55 R16"><datalist id="sizes4">${sizeList().map(x => `<option value="${esc(x.size)}">`).join('')}</datalist>
+      <div class="row"><div><label for="f_brand">Марка и модел</label><input id="f_brand" placeholder="напр. Michelin Alpin 6"></div><div><label for="f_dot">DOT (година)</label><input id="f_dot" inputmode="numeric" value="${ex ? '' : YEAR}" placeholder="напр. 2022"></div></div>`;
+    h += ex ? `<div class="row"><div><label for="f_tread">Протектор (мм)</label><input id="f_tread" inputmode="decimal" placeholder="напр. 6.5"></div><div><label for="f_kmr">Изминати км</label><input id="f_kmr" inputmode="numeric" placeholder="ако знаеш"></div></div>`
+      : `<div class="row"><div><label for="f_date">Дата</label><input type="date" id="f_date" value="${todayStr()}"></div><div><label for="f_cost">Сума (€)</label><input id="f_cost" inputmode="decimal"></div></div>`;
+    return h + `<label class="chk" style="border:0"><input type="checkbox" id="f_rims" ${s && s.rims ? 'checked' : ''}> На джанти</label>
+      <button class="btn" onclick="saveTires(${ex})">${ex ? 'Запиши гумите' : 'Запиши новите гуми'}</button>`;
+  },
+
+  report() {
+    header('Справка', 'home');
+    const tot = DB.cars.length, win = DB.cars.filter(c => c.mounted === 'winter' || c.allSeason).length;
+    const full = DB.cars.filter(c => kinds(c).every(k => !need(c.sets[k]))).length;
+    const allSets = DB.cars.flatMap(c => kinds(c).filter(k => c.sets[k]).map(k => ({ c, k, s: c.sets[k] })));
+    const old = allSets.filter(x => ageOf(x.s) >= 6).length, rims = allSets.filter(x => x.s.rims).length;
+    const Y0 = YEAR + '-01-01', hy = DB.history.filter(x => x.date >= Y0);
+    const costAll = hy.reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0);
+    let h = statGrid([
+      ['Готови за зимата', win + '<small>/ ' + tot + '</small>', 'зимни или всесезонни', 'var(--win)'],
+      ['Пълни и годни', full + '<small>/ ' + tot + '</small>', 'без липси, брак и износване', 'var(--ok)'],
+      ['Над 6 години', old + '<small>к-та</small>', 'по DOT', old ? 'var(--warn)' : 'var(--ok)'],
+      ['На джанти', rims + '<small>/ ' + allSets.length + '</small>', 'комплекта', 'var(--teal)'],
+      ['За ротация', DB.cars.filter(c => rotDue(c) != null).length + '<small>коли</small>', 'на всеки ' + kmFmt(ROT_KM), 'var(--warn)'],
+      ['Ротации ' + YEAR, hy.filter(x => x.type === 'rotate').length + '<small>бр.</small>', '', 'var(--blue)'],
+      ['Разходи ' + YEAR, Math.round(costAll) + '<small>€</small>', 'средно ' + eur(costAll / tot) + ' на кола', 'var(--vio)'],
+      ['Брак ' + YEAR, hy.filter(x => x.type === 'scrap').length + '<small>гуми</small>', '', 'var(--bad)']
+    ]) + `
+      <h2>Гуми за купуване</h2>${orderCard()}
+      <h2>Сравнение на сервизите · ${YEAR}</h2>`;
+    h += statGrid(DB.services.map(sv => {
+      const hs = hy.filter(x => x.service === sv), ch = hs.filter(x => x.type === 'change');
+      const chCost = ch.reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0), cost = hs.reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0);
+      return ['🔧 ' + esc(sv), eur(ch.length ? chCost / ch.length : 0).replace(' €', '') + '<small>€ / смяна</small>', `${ch.length} смени · ${hs.length - ch.length} ремонта · общо ${eur(cost)}`, 'var(--vio)'];
+    }));
+    // износване по марка: мм на 10 000 км
+    const br = {};
+    allSets.forEach(({ c, k, s }) => { const km = kmOf(c, k); if (km < 5000) return; const r = (NEWD[k] - numv(s.tread)) / km * 10000; if (r <= 0) return; const x = br[s.brand] = br[s.brand] || { k, n: 0, sum: 0 }; x.n++; x.sum += r; });
+    const BL = Object.entries(br).map(([b, x]) => ({ b, k: x.k, rate: x.sum / x.n, n: x.n, life: (NEWD[x.k] - (x.k === 'summer' ? 3 : 4)) / (x.sum / x.n) * 10000 })).sort((a, b) => a.rate - b.rate);
+    if (BL.length) {
+      h += `<h2>Износване по марка</h2><div class="szgrid">${BL.map((x, i) => `<div class="szc" style="cursor:default;--acc:${i === 0 ? 'var(--ok)' : i === BL.length - 1 ? 'var(--bad)' : 'var(--line)'}">
+        <span class="sz">${ICO[x.k]} ${esc(x.b)}</span><span class="n" style="font-size:24px">${x.rate.toFixed(2)}<small>мм / 10 000 км</small></span>
+        <span class="mut">издържа ≈ ${Math.round(x.life / 1000)} 000 км · ${x.n} к-та</span></div>`).join('')}</div>
+        <div class="mut" style="margin-top:6px">Изчислено от протектора и изминатите км по пътната книжка. Живот до ${LIMIT.winter} мм за зимни и 3 мм за летни.</div>`;
+    }
+    const pc = DB.cars.map(c => ({ c, v: hy.filter(x => x.carId === c.id).reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0) })).sort((a, b) => b.v - a.v).slice(0, 6);
+    h += `<h2>Най-скъпи коли · ${YEAR}</h2>` + carGrid(pc.map(x => x.c), c => carTile(c, eur(pc.find(x => x.c === c).v) + ' тази година', ''));
+    h += `<h2>Коли по размер гуми</h2>${sizesCard()}`;
+    h += `<button class="btn sec" onclick="exportCSV()">⬇ Свали за Excel (CSV)</button>`;
+    if (isAdmin()) h += `<button class="btn" onclick="openSettings()">⚙️ Настройки: сервизи, бусове, цени</button>`;
+    return h;
+  }
+};
+
+function tripCard(t) {
+  const n = t.items.length, st = t.items.filter(x => x.step === 3).length;
+  const b = tripDone(t) ? '<span class="badge b-ok">Приключен</span>' : t.items.some(x => x.step) ? '<span class="badge b-warn">В движение</span>' : '<span class="badge b-soft">Чака</span>';
+  const s = k => t.items.filter(x => x.step >= k).length;
+  return `<button class="szc" style="--acc:${tripDone(t) ? 'var(--ok)' : 'var(--teal)'}" onclick="go('trip',{trip:'${t.id}'})"><span class="sz">🚚 ${esc(t.bus)}</span><span class="mut">→ ${esc(t.service)} · ${fmt(t.date)}</span>
+    <span class="n">${st}<small>/ ${n} готови</small></span>
+    <span class="mut">в буса ${s(1)} · сменени ${s(2)}</span>${(() => { const nr = t.items.filter(x => { const c = carById(x.carId); return c && c.sets[TARGET] && !c.sets[TARGET].rims; }).length; return nr ? `<span class="mut">${nr} без джанти (монтаж)</span>` : ''; })()}${b}</button>`;
+}
+const tripGrid = L => `<div class="szgrid">${L.map(tripCard).join('')}</div>`;
+
+const TABICO = {
+  home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  trips: '<path d="M2 7h12v9H2z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+  cars: '<path d="M5 17h14M4 17v-4l2-5.2A1.5 1.5 0 0 1 7.4 7h9.2a1.5 1.5 0 0 1 1.4.8L20 13v4"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/>',
+  store: '<path d="M3 21V9l9-5 9 5v12"/><path d="M7 21v-8h10v8"/><circle cx="12" cy="17" r="2.2"/>',
+  report: '<path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/>'
+};
+const TABEMO = { home: '🏠', trips: '🚚', cars: '🚗', store: '🛞', report: '📊' };
+const TABOF = { settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
+function renderTabbar() {
+  const openTrips = DB.trips.filter(t => !tripDone(t)).length;
+  const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).length;
+  const t = [['home', 'Начало'], ['trips', 'Рейсове', openTrips], ['cars', 'Коли', bad], ['store', 'Склад']];
+  if (isAdmin()) t.push(['report', 'Справка']);
+  const cur = TABOF[S.view] || 'home';
+  $('tabbar').innerHTML = t.map(([k, l, n]) => `<button onclick="go('${k}',{size:'',q:'',tab:'all'})" ${cur === k ? 'aria-current="page"' : ''}><span class="temo" aria-hidden="true">${TABEMO[k]}</span>${l}${n ? `<i>${n}</i>` : ''}</button>`).join('');
+}
+function render() {
+  if (!DB) return;
+  const h = V[S.view]();
+  if (typeof h === 'string') $('app').innerHTML = h;
+  renderTabbar();
+}
+
+/* ---------- Действия ---------- */
+const val = id => { const e = $(id); return e ? e.value.trim() : ''; };
+async function busy(fn) { const b = document.querySelector('.btn'); try { if (b) b.disabled = true; await fn(); } catch (e) { toast(e.message, 1); } finally { if (b) b.disabled = false; } }
+function openCar(id) { S.billSvc = ''; S.editPrices = 0; go('car', { sel: id, confirmRm: '', confirmAS: '', confirmRot: '' }); }
+async function removeCar(id) {
+  if (S.confirmRm !== id) { S.confirmRm = id; render(); return; }
+  const p = carById(id).plate;
+  try { await api('removeCar', { carId: id }); toast('Колата ' + p + ' е махната. Гумите ѝ са в свободни ✔'); go('store', { stab: 'free', confirmRm: '' }); } catch (e) { toast(e.message, 1); }
+}
+async function dropFree(id) {
+  if (S.confirmDrop !== id) { S.confirmDrop = id; render(); return; }
+  try { await api('dropFree', { id }); S.confirmDrop = ''; toast('Премахнати от склада ✔'); render(); } catch (e) { toast(e.message, 1); }
+}
+async function rotate(carId, k) {
+  if (S.confirmRot !== carId + k) { S.confirmRot = carId + k; render(); return; }
+  try { await api('rotate', { carId, k }); S.confirmRot = ''; toast('Ротацията е записана. Гумите са разменени предни ↔ задни ✔'); render(); } catch (e) { toast(e.message, 1); }
+}
+async function toggleRims(carId, k) { try { const on = await api('toggleRims', { carId, k }); toast(on ? 'Отбелязани: на джанти' : 'Отбелязани: без джанти'); render(); } catch (e) { toast(e.message, 1); } }
+async function setAllSeason(carId, on, sure) {
+  const c = carById(carId); if (!!c.allSeason === on) { S.confirmAS = ''; render(); return; }
+  const hasSets = kinds(c).some(k => c.sets[k] && have(c.sets[k]));
+  if (hasSets && !sure) { S.confirmAS = carId; render(); return; }
+  try { await api('setAllSeason', { carId, on }); S.confirmAS = ''; toast(on ? 'Колата е с всесезонни. Добави комплекта ✔' : 'Колата е с летни + зимни. Добави комплектите ✔'); render(); } catch (e) { toast(e.message, 1); }
+}
+function saveCar() {
+  busy(async () => { const id = await api('addCar', { plate: val('f_plate'), model: val('f_model'), size: val('f_size'), driver: val('f_drv'), service: val('f_srv'), km: val('f_km'), allSeason: val('f_kind') === '1' }); toast('Колата е добавена. Добави ѝ гумите ✔'); go('car', { sel: id, confirmRm: '', confirmAS: '', confirmRot: '' }); });
+}
+async function updateKm(carId) { try { await api('updateKm', { carId, km: val('f_upkm') }); toast('Км са обновени ✔'); render(); } catch (e) { toast(e.message, 1); } }
+function saveFree() {
+  busy(async () => { await api('addFree', { k: val('f_k'), count: val('f_n'), size: val('f_size'), brand: val('f_brand'), dot: val('f_dot'), tread: val('f_tread'), kmRun: val('f_kmr'), rims: $('f_rims').checked, note: val('f_note') }); toast('Добавени в свободни гуми ✔'); go('store', { stab: 'free' }); });
+}
+async function assign(carId, mode) {
+  const c = carById(carId);
+  try { const n = await api('assignFree', { id: S.fid, carId, mode }); toast(n + ' бр. към ' + c.plate + '. Надпиши гумите с новия номер ✔'); go('car', { sel: carId, confirmRm: '' }); } catch (e) { toast(e.message, 1); }
+}
+async function cycleTire(carId, k, i) { try { const st = await api('cycleTire', { carId, k, i }); toast(SETN[k] + ' ' + POS[i] + ': ' + TST[st].toLowerCase()); render(); } catch (e) { toast(e.message, 1); } }
+function saveTires(ex) {
+  const k = val('f_k');
+  if (!val('f_size')) return toast('Въведи размера', 1);
+  busy(async () => {
+    await api('newTires', { carId: S.sel, k, existing: !!ex, count: val('f_n'), size: val('f_size'), brand: val('f_brand'), dot: val('f_dot'), tread: val('f_tread'), kmRun: val('f_kmr'), date: val('f_date'), cost: val('f_cost'), rims: $('f_rims').checked });
+    toast('Гумите са записани ✔'); S.exist = undefined; go('car');
+  });
+}
+function saveCarEdit(carId) {
+  busy(async () => { await api('editCar', { carId, size: val('e_size'), service: val('e_srv'), mounted: val('e_mnt'), model: val('e_model'), driver: val('e_drv') }); toast('Данните са запазени ✔'); render(); });
+}
+async function refreshRoad() { try { await api('refresh'); toast('Колите са обновени от пътната книжка ✔'); render(); } catch (e) { toast(e.message, 1); } }async function advance(tripId, carId) { try { await api('advance', { tripId, carId }); toast('Отбелязано ✔'); render(); } catch (e) { toast(e.message, 1); } }
+function doChange(tripId, carId) {
+  if (!isAdmin()) { advanceChanged(tripId, carId); return; }
+  go('change', { sel: carId, fromTrip: tripId, trip: tripId });
+}
+async function advanceChanged(tripId, carId) {
+  const c = carById(carId);
+  try { await api('change', { carId, km: c.odo || c.km, service: DB.trips.find(t => t.id === tripId).service, date: todayStr() }); toast('Отбелязано като сменени ✔'); render(); } catch (e) { toast(e.message, 1); }
+}
+// сметка за смяна: уговорена обща цена + отметки за допълнителни неща
+function billRows(svc, base) {
+  S.billBase = base; const P = pricesOf(svc);
+  return `<div class="bbase">${['norims', 'rims'].map(k => `<button type="button" class="${k === base ? 'on' : ''}" onclick="$('bill').innerHTML=billRows(val('f_srv'),'${k}')">${k === 'rims' ? '🛞 ' : ''}${BASE[k]}<small>${eur(P[k])}</small></button>`).join('')}</div>
+    ${isAdmin() ? (S.editPrices ? `<div class="pedit"><b>Уговорени цени · ${esc(svc)}</b>${['norims', 'rims'].map(k => `<div class="prow"><div style="flex:1;min-width:0">${BASE[k]}</div><input class="bp" id="pp_${k}" inputmode="decimal" value="${P[k] || ''}" placeholder="0" aria-label="${BASE[k]}"><span class="bx">€</span></div>`).join('')}
+      <div class="row2b"><button type="button" class="sec" onclick="S.editPrices=0;$('bill').innerHTML=billRows(val('f_srv'),S.billBase)">Откажи</button><button type="button" onclick="savePrices()">Запази цените</button></div></div>`
+      : `<button type="button" class="plink" onclick="S.editPrices=1;$('bill').innerHTML=billRows(val('f_srv'),S.billBase)">✏️ Промени уговорените цени за ${esc(svc)}</button>`) : ''}
+    <div class="bxl">Допълнително</div><div class="bext">${(DB.extras || []).map((x, i) => `<label class="echip"><input type="checkbox" id="e_${i}"><span>${esc(x)}</span></label>`).join('')}
+    <input id="e_other" class="eoth" placeholder="Друго…"></div>
+    <div class="bsum"><label for="f_cost">Сума за сметката</label><div class="bsumin"><input id="f_cost" inputmode="decimal" value="${P[base] || ''}"><span>€</span></div>
+    <div class="mut">Уговорената цена е ${eur(P[base])}. Ако има допълнително, отметни го и промени сумата.</div></div>`;
+}
+async function savePrices() {
+  const svc = val('f_srv');
+  try {
+    await api('setPrices', { service: svc, norims: val('pp_norims'), rims: val('pp_rims') });
+    S.editPrices = 0; $('bill').innerHTML = billRows(svc, S.billBase); toast('Цените за ' + svc + ' са запазени ✔');
+  } catch (e) { toast(e.message, 1); }
+}
+function billItems() {
+  const ex = (DB.extras || []).filter((x, i) => $('e_' + i) && $('e_' + i).checked);
+  if (val('e_other')) ex.push(val('e_other'));
+  return { base: S.billBase, extras: ex, cost: val('f_cost') };
+}
+function openSettings() {
+  S.users = null;
+  S.set = { services: DB.services.map(n => ({ old: n, name: n })), buses: DB.buses.map(n => ({ old: n, name: n })), prices: JSON.parse(JSON.stringify(DB.prices || {})), extras: (DB.extras || []).slice() };
+  go('settings');
+}
+function saveSettings() { busy(async () => { await api('saveSettings', S.set); toast('Настройките са запазени ✔'); go('report'); }); }
+function saveChange() {
+  const d = { carId: S.sel, rotate: $('f_rot') ? $('f_rot').checked : false, date: val('f_date'), service: val('f_srv'), km: val('f_km'), treadOn: val('f_on'), treadOff: val('f_off'), ...billItems(), note: val('f_note') };
+  busy(async () => { await api('change', d); toast('Смяната е записана ✔'); if (S.fromTrip) go('trip', { trip: S.fromTrip, fromTrip: '' }); else go('car'); });
+}
+function togglePick(id) { const i = S.picked.indexOf(id); if (i < 0) S.picked.push(id); else S.picked.splice(i, 1); const bus = val('f_bus'), srv = val('f_srv'), dt = val('f_date'); render(); $('f_bus').value = bus; $('f_srv').value = srv; $('f_date').value = dt; }
+function saveTrip() { busy(async () => { const id = await api('newTrip', { bus: val('f_bus'), service: val('f_srv'), date: val('f_date'), cars: S.picked }); toast('Рейсът е създаден ✔'); go('trip', { trip: id }); }); }
+function saveExpense() { if (!S.sel) return toast('Избери кола', 1); busy(async () => { await api('expense', { carId: S.sel, type: val('f_type'), date: val('f_date'), text: val('f_text'), service: val('f_srv'), cost: val('f_cost') }); toast('Разходът е записан ✔'); go('car'); }); }
+
+function usersHtml() {
+  if (!S.users) return '<div class="mut">Зареждане…</div>';
+  const base = location.href.split('?')[0].split('#')[0];
+  return S.users.map(u => { const link = base + '?t=' + u.token; return `<div class="urow"><div style="flex:1;min-width:0"><b>${esc(u.name)}</b> <span class="mut">${u.role === 'admin' ? 'администратор' : 'шофьор на бус'}${u.active ? '' : ' · спрян'}</span><div class="ulink">${esc(link)}</div></div>
+    <div class="ubtns"><button onclick="copyLink('${esc(link)}')">Копирай</button>${u.token === TOKEN ? '' : `<button class="sec" onclick="setUser('${esc(u.token)}',${!u.active})">${u.active ? 'Спри' : 'Пусни'}</button>`}</div></div>`; }).join('')
+    + `<div class="row" style="margin-top:12px"><input id="u_name" placeholder="Име, напр. Стефан"><select id="u_role"><option value="driver">Шофьор на бус</option><option value="admin">Администратор</option></select></div>
+    <button class="btn sec" style="margin-top:8px" onclick="addUser()">+ Нов потребител</button>`;
+}
+async function addUser() { if (!val('u_name')) return toast('Въведи име', 1); try { S.users = await api('addUser', { name: val('u_name'), role: val('u_role') }); $('usersBox').innerHTML = usersHtml(); toast('Потребителят е създаден. Копирай линка му ✔'); } catch (e) { toast(e.message, 1); } }
+async function setUser(token, active) { try { S.users = await api('setUser', { token, active }); $('usersBox').innerHTML = usersHtml(); toast(active ? 'Достъпът е пуснат ✔' : 'Достъпът е спрян ✔'); } catch (e) { toast(e.message, 1); } }
+function copyLink(t) {
+  const done = () => toast('Линкът е копиран ✔');
+  const fallback = () => { const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Задръж върху линка и го копирай', 1); } a.remove(); };
+  try { navigator.clipboard.writeText(t).then(done, fallback); } catch (e) { fallback(); }
+}
+function exportCSV() {
+  const set = (c, k) => { const s = c.sets[k]; return s ? [have(s), s.tread, s.dot, s.rims ? 'да' : 'не'] : ['', '', '', '']; };
+  const Y0 = YEAR + '-01-01';
+  const rows = [['Номер', 'Модел', 'Шофьор', 'Размер', 'Сервиз', 'На колата', 'Км', 'Летни бр.', 'Летни мм', 'Летни DOT', 'Летни джанти', 'Зимни бр.', 'Зимни мм', 'Зимни DOT', 'Зимни джанти', 'Всесезонни бр.', 'Всесезонни мм', 'Всесезонни DOT', 'Всесезонни джанти', 'Разходи ' + YEAR]];
+  DB.cars.slice().sort((a, b) => a.plate.localeCompare(b.plate)).forEach(c => rows.push([c.plate, c.model, c.driver, c.size, c.service, SETN[c.mounted], c.odo || c.km || '']
+    .concat(set(c, 'summer'), set(c, 'winter'), set(c, 'all'), [DB.history.filter(h => h.carId === c.id && h.date >= Y0).reduce((a, h) => a + (h.cost ? numv(h.cost) : 0), 0)])));
+  const csv = '\ufeff' + rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'gumi-' + todayStr() + '.csv';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function showMsg(t, retry) {
+  $('hdr').innerHTML = '<div class="top"><h1>Гуми Автопарк</h1></div>';
+  $('app').innerHTML = `<div class="card" style="margin-top:20px;text-align:center;padding:24px;line-height:1.5">${t}${retry ? '<button class="btn" onclick="boot()">Опитай пак</button>' : ''}</div>`;
+}
+async function boot() {
+  if (API_URL.indexOf('http') !== 0) return showMsg('Липсва адресът на сървъра. Отвори index.html и попълни API_URL.');
+  if (!TOKEN) return showMsg('Отвори приложението от личния си линк за вход.<br>Поискай го от администратора.');
+  showMsg('<div class="spin"></div>Зареждане…');
+  try { await api('load'); render(); } catch (e) { showMsg('⚠️ ' + esc(e.message), true); }
+}
+boot();
+</script>
+</body>
+</html>
