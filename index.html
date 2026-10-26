@@ -630,7 +630,7 @@ const V = {
     const q = S.q.toLowerCase();
     const f = { all: () => true, todo: isTodo, wait: c => !c.allSeason && c.mounted !== TARGET, low: c => issues(c).length, rot: c => rotDue(c) != null };
     const list = DB.cars.filter(f[S.tab]).filter(c => !S.size || c.size === S.size).filter(c => !q || [c.plate, c.model, c.driver].join(' ').toLowerCase().includes(q)).sort((a, b) => a.plate.localeCompare(b.plate));
-    let h = (canEdit() ? `<div class="row" style="margin-bottom:12px"><button class="btn" style="margin:0" onclick="go('newCar')">+ Кола</button><button class="btn sec" style="margin:0" onclick="refreshRoad()">🔄 Обнови</button></div><div class="mut" style="margin:-4px 0 12px">Колите от пътната книжка идват сами (🔄 Обнови ги взима веднага). С „+ Кола“ добавяш само коли, които ги няма там.</div>` : '') + `<input class="search" id="f_q" placeholder="Търси по номер, модел, шофьор…" value="${esc(S.q)}" oninput="S.q=this.value;render();$('f_q').focus();$('f_q').setSelectionRange(this.value.length,this.value.length)">
+    let h = (canEdit() ? `<div class="row" style="margin-bottom:12px"><button class="btn" style="margin:0" onclick="go('newCar')">+ Кола</button><button class="btn sec" style="margin:0" onclick="refreshRoad()">🔄 Обнови</button></div><button class="btn sec" style="margin:0 0 12px" onclick="go('bulkSvc',{bsel:[]})">🔧 Сервиз за няколко коли</button><div class="mut" style="margin:-4px 0 12px">Колите от пътната книжка идват сами (🔄 Обнови ги взима веднага). С „+ Кола“ добавяш само коли, които ги няма там.</div>` : '') + `<input class="search" id="f_q" placeholder="Търси по номер, модел, шофьор…" value="${esc(S.q)}" oninput="S.q=this.value;render();$('f_q').focus();$('f_q').setSelectionRange(this.value.length,this.value.length)">
       <label for="f_sz" style="margin-top:0">Размер</label><select id="f_sz" style="margin-bottom:4px" onchange="S.size=this.value;render()"><option value="">Всички размери</option>${sizeList().map(x => `<option value="${esc(x.size)}" ${S.size === x.size ? 'selected' : ''}>${esc(x.size)} (${x.cars} коли)</option>`).join('')}</select>
       <div class="tabs">${[['all', 'Всички']].concat(DB.cars.some(isTodo) ? [['todo', 'Нови']] : [], [['wait', 'Смяна'], ['low', 'Проблеми'], ['rot', 'Ротация']]).map(t => `<button class="${S.tab === t[0] ? 'on' : ''}" onclick="S.tab='${t[0]}';render()">${t[1]}</button>`).join('')}</div>
       <div class="mut" style="margin-bottom:8px">${list.length} ${list.length === 1 ? 'кола' : 'коли'}${S.size ? ' с размер ' + esc(S.size) : ''}</div>${canEdit() ? roadDiag() : ''}`;
@@ -740,6 +740,17 @@ const V = {
     h += `<button class="btn" onclick="saveSettings()">Запази настройките</button>`;
     if (!S.users) api('users').then(u => { S.users = u; if (S.view === 'settings') $('usersBox').innerHTML = usersHtml(); }).catch(e => toast(e.message, 1));
     return h + `<h2>Потребители</h2><div class="card" id="usersBox">${usersHtml()}</div>`;
+  },
+
+  bulkSvc() {
+    header('Сервиз за коли', 'cars');
+    const sv = S.bsvc && DB.services.includes(S.bsvc) ? S.bsvc : DB.services[0];
+    const L = DB.cars.slice().sort((a, b) => a.plate.localeCompare(b.plate));
+    return `<label for="b_svc" style="margin-top:0">Сервиз</label><select id="b_svc" onchange="S.bsvc=this.value;render()">${opts(DB.services, sv)}</select>
+      <div class="mut" style="margin:8px 0">Отметни колите, които ходят в <b>${esc(sv)}</b>. Отметнати са тези, които вече са към него.</div>
+      <div class="row" style="margin-bottom:8px"><button class="btn sec" style="margin:0" onclick="bulkAll(true)">Отметни всички</button><button class="btn sec" style="margin:0" onclick="bulkAll(false)">Махни всички</button></div>
+      <div class="card">${L.map(c => `<label class="chk"><input type="checkbox" class="bcar" value="${c.id}" ${c.service === sv ? 'checked' : ''}><span style="flex:1"><b class="plate">${esc(c.plate)}</b> <span class="mut">${esc(c.model)} · сега: ${esc(c.service || '—')}</span></span></label>`).join('')}</div>
+      <button class="btn" id="b_save" onclick="saveBulkSvc()">Запази</button>`;
   },
 
   newCar() {
@@ -865,7 +876,7 @@ const TABICO = {
   report: '<path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/>'
 };
 const TABEMO = { home: '🏠', trips: '🚚', cars: '🚗', store: '🛞', report: '📊' };
-const TABOF = { profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
+const TABOF = { bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
 function renderTabbar() {
   const openTrips = DB.trips.filter(t => !tripDone(t)).length;
   const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).length;
@@ -1043,6 +1054,17 @@ function roadDiag() {
   if (r.rows == null) return '';
   const av = Object.keys(r.activeVals || {}).map(k => esc(k) + ': ' + r.activeVals[k]).join(', ');
   return `<details class="diag"><summary>Проверка на пътната книжка</summary><div class="mut">Лист „${esc(r.sheet)}“ · ${r.rows} реда · ${r.withPlate} с номер · <b>${r.cars} коли</b><br>Номер: колона ${esc(r.plateCol)}${r.kmCol ? ' · км: колона ' + r.kmCol : ''}${r.activeCol ? '<br>„Активен“ (колона ' + r.activeCol + '): ' + av : ''}<br>Сървър: версия ${esc(DB.version)}</div></details>`;
+}
+function bulkAll(on) { document.querySelectorAll('.bcar').forEach(x => { x.checked = on; }); }
+async function saveBulkSvc() {
+  const sv = val('b_svc'), boxes = Array.from(document.querySelectorAll('.bcar'));
+  const todo = boxes.filter(x => x.checked && carById(x.value).service !== sv).map(x => x.value);
+  if (!todo.length) return toast('Няма промени');
+  const btn = $('b_save'); btn.disabled = true;
+  try {
+    for (let i = 0; i < todo.length; i++) { btn.textContent = 'Записвам ' + (i + 1) + ' от ' + todo.length + '…'; await api('editCar', { carId: todo[i], service: sv }); }
+    toast(todo.length + (todo.length === 1 ? ' кола е' : ' коли са') + ' към ' + sv + ' ✔'); go('cars');
+  } catch (e) { toast(e.message, 1); btn.disabled = false; btn.textContent = 'Запази'; }
 }
 function showMsg(t, retry) {
   $('hdr').innerHTML = '<div class="top"><h1>Гуми Автопарк</h1></div>';
