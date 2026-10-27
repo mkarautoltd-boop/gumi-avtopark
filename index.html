@@ -306,6 +306,29 @@ body{display:flex;flex-direction:column;padding-bottom:0;background-attachment:s
 .scr{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:16px}
 .tabbar{position:relative;left:auto;right:auto;bottom:auto;flex:none;width:calc(100% - 28px);margin:4px auto calc(10px + env(safe-area-inset-bottom,0px))}
 .toast{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+
+@media (min-width:900px){
+  body{flex-direction:row}
+  .tabbar{order:-1;width:232px;height:calc(100% - 28px);margin:14px 0 14px 14px;border-radius:26px;padding:14px 10px;display:flex;flex-direction:column}
+  .tabbar-in{display:flex;flex-direction:column;gap:6px;max-width:none;margin:0}
+  .tabbar-in::before{content:'🛞  Гуми Автопарк';font-family:var(--disp);font-weight:800;font-size:16px;color:var(--txt);padding:6px 12px 16px;white-space:nowrap}
+  .tabbar button{flex-direction:row;justify-content:flex-start;gap:12px;min-height:50px;padding:0 14px;font-size:15px;border-radius:16px}
+  .tabbar button:hover{background:var(--soft)}
+  .tabbar button[aria-current="page"]:hover{background:var(--navy)}
+  .temo{font-size:22px}
+  .tabbar i{position:static;margin-left:auto;border:0}
+  .scr{padding:0 12px 24px}
+  header,main{max-width:1180px;margin-left:auto;margin-right:auto}
+  header{padding-top:24px}
+  .top h1{font-size:24px}
+  .counters,.season{max-width:1180px}
+  .szgrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+  .tiles{max-width:760px}
+  main.v-car,main.v-trip{max-width:860px}
+  main.v-change,main.v-newTires,main.v-newCar,main.v-addFree,main.v-expense,main.v-profile,main.v-settings,main.v-newTrip,main.v-bulkSvc,main.v-assign{max-width:680px}
+  .toast{left:auto;right:24px;bottom:24px;max-width:420px}
+  .login{margin-top:60px}
+}
 </style>
 </head>
 <body>
@@ -899,7 +922,7 @@ function renderTabbar() {
 function render() {
   if (!DB) return;
   const h = V[S.view]();
-  if (typeof h === 'string') $('app').innerHTML = h;
+  if (typeof h === 'string') { $('app').innerHTML = h; $('app').className = 'v-' + S.view; }
   renderTabbar();
 }
 
