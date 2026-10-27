@@ -298,11 +298,21 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 .top h1{font-size:19px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tile[style*="var(--blue)"]{color:#0f1626}:root:not([data-theme="light"]) .tile[style*="var(--blue)"] i{background:rgba(15,22,38,.12)}}
 :root[data-theme="dark"] .tile[style*="var(--blue)"]{color:#0f1626}
+
+/* подредба за iPhone: съдържанието се превърта, менюто стои отдолу */
+html,body{height:100%;overflow:hidden}
+body{display:flex;flex-direction:column;padding-bottom:0;background-attachment:scroll}
+@supports (height:100dvh){html,body{height:100dvh}}
+.scr{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:16px}
+.tabbar{position:relative;left:auto;right:auto;bottom:auto;flex:none;width:calc(100% - 28px);margin:4px auto calc(10px + env(safe-area-inset-bottom,0px))}
+.toast{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 </style>
 </head>
 <body>
+<div class="scr" id="scr">
 <header id="hdr"></header>
 <main id="app"><div class="center">Зареждане…</div></main>
+</div>
 <nav class="tabbar" aria-label="Раздели"><div class="tabbar-in" id="tabbar"></div></nav>
 <div class="toast" id="toast" hidden></div>
 
@@ -472,7 +482,7 @@ const isAdmin = () => USER.role === 'admin';
 const canEdit = () => USER.role === 'admin' || USER.role === 'staff';
 const ROLE = { admin: 'Администратор', staff: 'Служител', driver: 'Шофьор на бус' };
 function toast(msg, err) { const t = $('toast'); t.textContent = msg; t.className = 'toast' + (err ? ' err' : ''); t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => t.hidden = true, 2800); }
-function go(view, extra) { Object.assign(S, extra || {}, { view }); render(); window.scrollTo(0, 0); }
+function go(view, extra) { Object.assign(S, extra || {}, { view }); render(); $('scr').scrollTop = 0; }
 
 function header(title, back) {
   let h = `<div class="top">${back ? `<button class="back" aria-label="Назад" onclick="go('${back}')">‹</button>` : ''}<h1>${esc(title)}</h1><button class="ubtn" onclick="go('profile')" aria-label="Профил">👤 ${esc(USER.name)}</button></div>`;
