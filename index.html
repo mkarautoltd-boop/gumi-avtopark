@@ -455,7 +455,7 @@ async function api(a, d = {}) {
     catch (e) { throw new Error('Няма връзка със сървъра. Провери интернета и опитай пак.'); }
     try { j = await r.json(); } catch (e) { throw new Error('Сървърът върна грешен отговор. Провери API_URL и внедряването (Достъп: Всеки).'); }
     if (!j.ok) { if (j.auth) { forgetLogin(); } const er = new Error(j.error || 'Грешка'); er.auth = !!j.auth; throw er; }
-    if (j.db) { DB = j.db; TARGET = DB.target || TARGET; ROT_KM = DB.rotKm || ROT_KM; }
+    if (j.db) { DB = j.db; TARGET = DB.target || TARGET; ROT_KM = DB.rotKm || ROT_KM; saveLocal(j); }
     if (j.me) Object.assign(USER, j.me);
     return j.res;
   } finally { document.body.classList.remove('loading'); }
@@ -1019,7 +1019,9 @@ async function savePass() {
     toast('Паролата е сменена ✔'); go('home');
   } catch (e) { toast(e.message, 1); }
 }
-function forgetLogin() { TOKEN = ''; DB = null; try { localStorage.removeItem('gumi_t'); } catch (e) {} }
+function forgetLogin() { TOKEN = ''; DB = null; try { localStorage.removeItem('gumi_t'); localStorage.removeItem('gumi_db'); } catch (e) {} }
+function saveLocal(j) { try { localStorage.setItem('gumi_db', JSON.stringify({ t: TOKEN, db: j.db, me: j.me || USER })); } catch (e) {} }
+function loadLocal() { try { const o = JSON.parse(localStorage.getItem('gumi_db') || 'null'); return o && o.t === TOKEN && o.db ? o : null; } catch (e) { return null; } }
 function logout() { forgetLogin(); showLogin(); }
 function showLogin(msg) {
   $('tabbar').innerHTML = '';
@@ -1062,7 +1064,9 @@ async function saveBulkSvc() {
   if (!todo.length) return toast('Няма промени');
   const btn = $('b_save'); btn.disabled = true;
   try {
-    for (let i = 0; i < todo.length; i++) { btn.textContent = 'Записвам ' + (i + 1) + ' от ' + todo.length + '…'; await api('editCar', { carId: todo[i], service: sv }); }
+    btn.textContent = 'Записвам…';
+    try { await api('editCars', { ids: todo, service: sv }); }
+    catch (e) { if (!/Непознато/.test(e.message)) throw e; for (let i = 0; i < todo.length; i++) { btn.textContent = 'Записвам ' + (i + 1) + ' от ' + todo.length + '…'; await api('editCar', { carId: todo[i], service: sv }); } }
     toast(todo.length + (todo.length === 1 ? ' кола е' : ' коли са') + ' към ' + sv + ' ✔'); go('cars');
   } catch (e) { toast(e.message, 1); btn.disabled = false; btn.textContent = 'Запази'; }
 }
@@ -1074,8 +1078,11 @@ async function boot() {
   if (API_URL.indexOf('http') !== 0) return showMsg('Липсва адресът на сървъра. Отвори index.html и попълни API_URL.');
   if (new URLSearchParams(location.search).get('t')) history.replaceState(null, '', location.pathname);
   if (!TOKEN) return showLogin();
-  showMsg('<div class="spin"></div>Зареждане…');
-  try { await api('load'); render(); } catch (e) { if (e.auth) showLogin(e.message); else showMsg('⚠️ ' + esc(e.message), true); }
+  // показва веднага последните данни от телефона, а новите се зареждат отзад
+  const L = loadLocal();
+  if (L) { DB = L.db; TARGET = DB.target || TARGET; ROT_KM = DB.rotKm || ROT_KM; Object.assign(USER, L.me || {}); render(); }
+  else showMsg('<div class="spin"></div>Зареждане…');
+  try { await api('load'); render(); } catch (e) { if (e.auth) showLogin(e.message); else if (DB) toast(e.message, 1); else showMsg('⚠️ ' + esc(e.message), true); }
 }
 boot();
 </script>
