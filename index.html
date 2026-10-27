@@ -493,7 +493,7 @@ const VAN_RX = /MASTER|VIVARO|TRANSIT|SPRINTER|DUCATO|TRAFIC|JUMPER|BOXER|CRAFTE
 const SUV_RX = /\bX[1-7]\b|\bQ[2-8]\b|TOUAREG|TIGUAN|DUSTER|SPORTAGE|RAV ?4|CR-?V|X-?TRAIL|QASHQAI|KODIAQ|KAROQ|SANTA ?FE|TUCSON|PAJERO|OUTLANDER|CRUISER|CHEROKEE|\bGL[ABCEKS]\b|\bML\b|XC[469]0|CAYENNE|MACAN|RANGE ROVER|DISCOVERY|NAVARA|HILUX|L200|RANGER|AMAROK|KUGA|T-?ROC|SORENTO|DEFENDER|ДЖИП|ДЪСТЪР/i;
 const vtypeAuto = c => /\d{2}\s*C\b/i.test(c.size || '') || VAN_RX.test(c.model || '') ? 'van' : SUV_RX.test(c.model || '') ? 'suv' : 'car';
 const vtypeOf = c => c.vtype || vtypeAuto(c);
-const diamOf = sz => { const m = String(sz || '').match(/R\s?(\d{2})/i); return m ? m[1] : ''; };
+const diamOf = sz => { const t = String(sz || ''), m = t.match(/R\s*F?\s*(\d{2})/i) || t.match(/\d{3}\s*[\/ ]\s*\d{2}\s*[\/ \-]?\s*[A-Z]{0,2}\s*(\d{2})/i) || t.match(/^\s*(\d{2})\s*(?:C|"|цола)?\s*$/i); return m && +m[1] >= 12 && +m[1] <= 24 ? m[1] : ''; };
 const putSize = c => { const s = c.sets[other(c.mounted)]; return (s && s.size) || c.size; };
 function priceFor(svc, c) {
   const P = pricesOf(svc), t = vtypeOf(c), d = diamOf(putSize(c)), g = (((P.grid || {})[t]) || {})[d] || {};
@@ -1032,11 +1032,12 @@ function billRows(svc, base) {
   return `<div class="bbase">${['norims', 'rims'].map(k => `<button type="button" class="${k === base ? 'on' : ''}" onclick="$('bill').innerHTML=billRows(val('f_srv'),'${k}')">${k === 'rims' ? '🛞 ' : ''}${BASE[k]}<small>${eur(P[k])}</small></button>`).join('')}</div>
     ${isAdmin() ? (S.editPrices ? `<div class="pedit"><b>Уговорени цени · ${esc(svc)} · ${szl}</b>${['norims', 'rims'].map(k => `<div class="prow"><div style="flex:1;min-width:0">${BASE[k]}</div><input class="bp" id="pp_${k}" inputmode="decimal" value="${(P.d ? P.own[k] : PF[k]) || ''}" placeholder="${P.d ? (PF[k] || 0) : 0}" aria-label="${BASE[k]}"><span class="bx">€</span></div>`).join('')}${P.d ? '<div class="mut" style="margin-top:4px">Цената важи за всички коли ' + szs + ' в този сервиз.</div>' : ''}
       <div class="row2b"><button type="button" class="sec" onclick="S.editPrices=0;$('bill').innerHTML=billRows(val('f_srv'),S.billBase)">Откажи</button><button type="button" onclick="savePrices()">Запази цените</button></div></div>`
-      : `<button type="button" class="plink" onclick="S.editPrices=1;$('bill').innerHTML=billRows(val('f_srv'),S.billBase)">✏️ Промени цената за ${szs} · ${esc(svc)}</button>`) : ''}
+      : `<button type="button" class="plink" onclick="S.editPrices=1;$('bill').innerHTML=billRows(val('f_srv'),S.billBase)">✏️ Промени ${P.d ? 'цената за ' + szs : 'общата цена'} · ${esc(svc)}</button>`) : ''}
     <div class="bxl">Допълнително</div><div class="bext">${(DB.extras || []).map((x, i) => `<label class="echip"><input type="checkbox" id="e_${i}"><span>${esc(x)}</span></label>`).join('')}
     <input id="e_other" class="eoth" placeholder="Друго…"></div>
     <div class="bsum"><label for="f_cost">Сума за сметката</label><div class="bsumin"><input id="f_cost" inputmode="decimal" value="${P[base] || ''}"><span>€</span></div>
-    <div class="mut">${szl}: уговорената цена е ${eur(P[base])}${miss ? ' (обща — няма въведена цена за този размер)' : ''}. Ако има допълнително, отметни го и промени сумата.</div></div>`;
+    ${!P.d ? `<div class="calc" style="background:var(--badbg);margin:8px 0 0">⚠️ Не виждам размер на джантата за тази кола${C.size ? ' (написано е „' + esc(putSize(C)) + '“)' : ''}. Попълни размера в колата → „Данни за колата“, напр. 215/70 R15C — тогава цената се взима сама.</div>` : miss && !P[base] ? `<div class="calc" style="background:var(--badbg);margin:8px 0 0">⚠️ Няма въведена цена за <b>${szl}</b> в ${esc(svc)}${isAdmin() ? ' — натисни ✏️ отгоре или я попълни в Настройки → ' + VT[P.t] : ''}.</div>` : ''}
+    <div class="mut">${szl}: уговорената цена е ${eur(P[base])}${miss && P[base] ? ' (общата — няма въведена цена за този размер)' : ''}. Ако има допълнително, отметни го и промени сумата.</div></div>`;
 }
 async function savePrices() {
   const svc = val('f_srv');
