@@ -331,6 +331,7 @@ body{display:flex;flex-direction:column;padding-bottom:0;background-attachment:s
   .login{margin-top:60px}
 }
 .tabbar button[aria-current="page"],.tabbar button[aria-current="page"]:hover{background:rgba(198,244,50,.14)}
+.elink{border:0;background:none;color:var(--win);font:inherit;font-weight:700;padding:0;cursor:pointer}
 </style>
 </head>
 <body>
@@ -378,6 +379,11 @@ const lowTread = c => kinds(c).filter(k => c.sets[k] && treadState(c.sets[k], k)
 // изминати км с комплекта: натрупани + от последната смяна до сега (по пътната книжка)
 const kmOf = (c, k) => { const s = c.sets[k]; if (!s) return 0; return (s.kmRun || 0) + (c.mounted === k ? Math.max(0, (c.odo || c.km) - c.km) : 0); };
 const sub_ = (...a) => a.map(x => String(x == null ? '' : x).trim()).filter(x => x && x !== '—').join(' · ');
+function setLine(s, short) {
+  const a = ageOf(s), col = a >= 10 ? 'var(--bad)' : 'var(--warn)';
+  const dot = s.dot ? `DOT ${esc(s.dot)} ${a >= 6 ? `<b style="color:${col}">(${a} г.${short ? '' : ' — стари'})</b>` : `(${a} г.)`}` : '<span style="opacity:.7">без DOT</span>';
+  return [short ? '' : esc(s.size), s.brand && s.brand !== '—' ? esc(s.brand) : '', dot].filter(Boolean).join(' · ');
+}
 const isTodo = c => !c.size || kinds(c).every(k => !c.sets[k]);
 const kmMan = c => c.manual || !c.roadKm;   // км се пишат на ръка: кола извън пътната книжка или още без км там
 const kmFmt = n => Math.round(n).toLocaleString('bg-BG') + ' км';
@@ -428,7 +434,7 @@ function freeCard(f) {
   const n = f.tires.length;
   return `<div class="szc fset" style="cursor:default;--acc:${f.k === 'winter' ? 'var(--win)' : f.k === 'all' ? 'var(--teal)' : 'var(--org)'}">
     <span class="sz">${ICO[f.k]} ${SETN[f.k]} · ${esc(f.size)}</span>
-    <span class="mut">${esc(f.brand)} · DOT ${esc(f.dot)}${ageOf(f) >= 6 ? ` <b style="color:var(--warn)">(${ageOf(f)} г.)</b>` : ''} · ${f.tread} мм</span>
+    <span class="mut">${setLine(f, true)} · ${f.tread} мм</span>
     <span class="mut">${f.rims ? '🛞 на джанти' : 'без джанти'}${f.kmRun ? ' · ' + kmFmt(f.kmRun) : ' · нови'}</span>
     <span class="dots4" aria-label="${n} гуми">${[0, 1, 2, 3].map(i => `<i class="${i < n ? '' : 'none'}"></i>`).join('')}<b style="margin-left:6px;font-size:13px">${n} бр.</b></span>
     <span class="mut">${f.from ? 'от ' + plateHtml(f.from) : esc(f.note || 'добавени ръчно')}</span>
@@ -691,7 +697,7 @@ const V = {
       const col = st === 'bad' ? 'var(--bad)' : st === 'warn' ? 'var(--warn)' : (k === 'winter' ? 'var(--win)' : 'var(--org)');
       const n = need(s), hv = have(s);
       return `<div class="set ${k === c.mounted ? 'mnt' : ''} ${k === 'summer' ? 'sum' : ''}"><div class="hd"><span>${ico} ${SETN[k]} · ${hv}/4 бр.</span>${where(k)}</div>
-        <div class="mut">${esc(s.size)} · ${esc(s.brand)} · DOT ${s.dot} ${ageOf(s) >= 6 ? `<b style="color:${ageOf(s) >= 10 ? 'var(--bad)' : 'var(--warn)'}">(${ageOf(s)} г. — стари)</b>` : `(${ageOf(s)} г.)`}</div>
+        <div class="mut">${setLine(s)}${canEdit() ? ` · <button class="elink" onclick="go('editSet',{nk:'${k}'})">✏️ Редактирай</button>` : ''}</div>
         <div class="setmeta"><button class="rimb ${s.rims ? 'on' : ''}" ${canEdit() ? '' : 'disabled'} onclick="toggleRims('${c.id}','${k}')">${s.rims ? '🛞 На джанти' : '○ Без джанти'}</button><span>🛣️ Изминати <b>${kmFmt(kmOf(c, k))}</b></span></div>
         ${(() => { const l = rotLeft(c, k), col = l < 0 ? 'var(--bad)' : l <= 1000 ? 'var(--warn)' : 'var(--mut)'; return `<div class="setmeta"><span>🔄 Ротация: <b style="color:${col}">${rotTxt(l)}</b>${k === c.mounted ? '' : ' каране'}</span>${canEdit() ? `<button class="rimb ${S.confirmRot === c.id + k ? 'cfmr' : ''}" onclick="rotate('${c.id}','${k}')">${S.confirmRot === c.id + k ? '✔ Потвърди ротацията' : 'Направих ротация'}</button>` : ''}</div>`; })()}
         <div class="tread"><i style="width:${w}%;background:${col}"></i></div>
@@ -776,6 +782,18 @@ const V = {
     h += `<button class="btn" onclick="saveSettings()">Запази настройките</button>`;
     if (!S.users) api('users').then(u => { S.users = u; if (S.view === 'settings') $('usersBox').innerHTML = usersHtml(); }).catch(e => toast(e.message, 1));
     return h + `<h2>Потребители</h2><div class="card" id="usersBox">${usersHtml()}</div>`;
+  },
+
+  editSet() {
+    const c = carById(S.sel), k = S.nk, s = c && c.sets[k]; if (!s) return go('car');
+    header(SETN[k] + ' · ' + c.plate, 'car');
+    return `<div class="calc">Допиши или поправи данните за ${SETN[k].toLowerCase()}те гуми. Състоянието на всяка гума се сменя с натискане в картата на колата.</div>
+      <label for="s_size">Размер</label><input id="s_size" list="sizes5" value="${esc(s.size || c.size)}"><datalist id="sizes5">${sizeList().map(x => `<option value="${esc(x.size)}">`).join('')}</datalist>
+      <label for="s_brand">Марка и модел</label><input id="s_brand" value="${esc(s.brand === '—' ? '' : s.brand)}" placeholder="напр. Michelin Alpin 6">
+      <label for="s_dot">DOT</label><input id="s_dot" inputmode="numeric" value="${esc(s.dot)}" placeholder="напр. 2022 или 2322">
+      <div class="mut" style="margin-top:4px">Годината или 4-те цифри от гумата след „DOT“ — напр. 2322 = 23-та седмица на 2022.</div>
+      <div class="row"><div><label for="s_tread">Протектор (мм)</label><input id="s_tread" inputmode="decimal" value="${s.tread}"></div><div><label for="s_kmr">Изминати км</label><input id="s_kmr" inputmode="numeric" value="${Math.round(s.kmRun || 0)}"></div></div>
+      <button class="btn" onclick="saveSet()">Запази</button>`;
   },
 
   bulkSvc() {
@@ -912,7 +930,7 @@ const TABICO = {
   report: '<path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/>'
 };
 const TABEMO = { home: '🏠', trips: '🚚', cars: '🚗', store: '🛞', report: '📊' };
-const TABOF = { bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
+const TABOF = { editSet: 'cars', bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
 function renderTabbar() {
   const openTrips = DB.trips.filter(t => !tripDone(t)).length;
   const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).length;
@@ -1092,6 +1110,13 @@ function roadDiag() {
   if (r.rows == null) return '';
   const av = Object.keys(r.activeVals || {}).map(k => esc(k) + ': ' + r.activeVals[k]).join(', ');
   return `<details class="diag"><summary>Проверка на пътната книжка</summary><div class="mut">Лист „${esc(r.sheet)}“ · ${r.rows} реда · ${r.withPlate} с номер · <b>${r.cars} коли</b><br>Номер: колона ${esc(r.plateCol)}${r.kmCol ? ' · км: колона ' + r.kmCol : ''}${r.activeCol ? '<br>„Активен“ (колона ' + r.activeCol + '): ' + av : ''}<br>Сървър: версия ${esc(DB.version)}</div></details>`;
+}
+function saveSet() {
+  busy(async () => {
+    try { await api('editSet', { carId: S.sel, k: S.nk, size: val('s_size'), brand: val('s_brand'), dot: val('s_dot'), tread: val('s_tread'), kmRun: val('s_kmr') }); }
+    catch (e) { if (/Непознато/.test(e.message)) throw new Error('Сървърът е стара версия — сложи новия код в Apps Script (версия 6).'); throw e; }
+    toast('Гумите са записани ✔'); go('car');
+  });
 }
 function bulkAll(on) { document.querySelectorAll('.bcar').forEach(x => { x.checked = on; }); }
 async function saveBulkSvc() {
