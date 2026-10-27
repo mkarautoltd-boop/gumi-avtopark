@@ -342,6 +342,7 @@ function treadState(set, kind) {
 const lowTread = c => kinds(c).filter(k => c.sets[k] && treadState(c.sets[k], k) !== 'ok');
 // изминати км с комплекта: натрупани + от последната смяна до сега (по пътната книжка)
 const kmOf = (c, k) => { const s = c.sets[k]; if (!s) return 0; return (s.kmRun || 0) + (c.mounted === k ? Math.max(0, (c.odo || c.km) - c.km) : 0); };
+const sub_ = (...a) => a.map(x => String(x == null ? '' : x).trim()).filter(x => x && x !== '—').join(' · ');
 const isTodo = c => !c.size || kinds(c).every(k => !c.sets[k]);
 const kmMan = c => c.manual || !c.roadKm;   // км се пишат на ръка: кола извън пътната книжка или още без км там
 const kmFmt = n => Math.round(n).toLocaleString('bg-BG') + ' км';
@@ -550,7 +551,7 @@ const V = {
     const rot = DB.cars.filter(c => rotDue(c) != null).sort((a, b) => rotDue(a) - rotDue(b));
     if (rot.length) h += `<h2>За ротация предни ↔ задни (${rot.length})</h2>` + carGrid(rot, c => carTile(c, `${SETN[c.mounted]} · ${rotTxt(rotDue(c))}`, `<span class="badge ${rotDue(c) < 0 ? 'b-bad' : 'b-warn'}">🔄 ${rotDue(c) < 0 ? 'просрочена' : 'скоро'}</span>`));
     const waiting = DB.cars.filter(c => !isTodo(c) && !c.allSeason && c.mounted !== TARGET && !tripOf(c.id));
-    h += `<h2>Чакат смяна, без рейс (${waiting.length})</h2>` + carGrid(waiting.slice(0, 8), c => carTile(c, c.size + ' · ' + c.service));
+    h += `<h2>Чакат смяна, без рейс (${waiting.length})</h2>` + carGrid(waiting.slice(0, 8), c => carTile(c, sub_(c.size, c.service)));
     if (waiting.length > 8) h += `<button class="btn sec" style="margin-top:0" onclick="go('cars',{tab:'wait'})">Виж всички ${waiting.length}</button>`;
     return h;
   },
@@ -634,7 +635,7 @@ const V = {
       <label for="f_sz" style="margin-top:0">Размер</label><select id="f_sz" style="margin-bottom:4px" onchange="S.size=this.value;render()"><option value="">Всички размери</option>${sizeList().map(x => `<option value="${esc(x.size)}" ${S.size === x.size ? 'selected' : ''}>${esc(x.size)} (${x.cars} коли)</option>`).join('')}</select>
       <div class="tabs">${[['all', 'Всички']].concat(DB.cars.some(isTodo) ? [['todo', 'Нови']] : [], [['wait', 'Смяна'], ['low', 'Проблеми'], ['rot', 'Ротация']]).map(t => `<button class="${S.tab === t[0] ? 'on' : ''}" onclick="S.tab='${t[0]}';render()">${t[1]}</button>`).join('')}</div>
       <div class="mut" style="margin-bottom:8px">${list.length} ${list.length === 1 ? 'кола' : 'коли'}${S.size ? ' с размер ' + esc(S.size) : ''}</div>${canEdit() ? roadDiag() : ''}`;
-    return h + (list.length ? carGrid(list, c => carTile(c, c.size + ' · ' + c.driver)) : '<div class="center">Няма коли</div>');
+    return h + (list.length ? carGrid(list, c => carTile(c, sub_(c.size, c.driver))) : '<div class="center">Няма коли</div>');
   },
 
   car() {
