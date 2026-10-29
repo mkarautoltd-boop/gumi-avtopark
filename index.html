@@ -337,11 +337,11 @@ body{display:flex;flex-direction:column;padding-bottom:0;background-attachment:s
 .pgi{display:flex;align-items:center;gap:4px}.pgi input{width:100%;min-width:0;min-height:38px;padding:0 8px;text-align:right}.pgi span{color:var(--mut);font-size:13px}
 .bud .bud-n{font-size:30px;font-weight:800;color:var(--lime);margin:2px 0}.bud-r{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}.bud-r>div{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:14px}.bud-r b{white-space:nowrap}.bud-t{font-weight:800}
 .tp-r{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px}.tp-r>span:first-child{flex:1;min-width:0}.tp-r b{white-space:nowrap}.tp-in{display:flex;align-items:center;gap:4px}.tp-in input{width:90px;min-height:36px;padding:0 8px;text-align:right}.tp-in small{color:var(--mut);white-space:nowrap}
-.pdfdoc{background:#fff;color:#1b2333;font:13px/1.45 -apple-system,'Segoe UI',Roboto,Arial,sans-serif;padding:4px 6px;width:760px}
-.pdfdoc .hd{border-bottom:3px solid #c6f432;padding-bottom:8px;margin-bottom:12px}.pdfdoc .t{font-size:22px;font-weight:800}.pdfdoc .d{color:#5b6475;font-size:12px}
-.pdfdoc .bxs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}.pdfdoc .bx{border:1px solid #dde2ea;border-radius:8px;padding:8px 10px}.pdfdoc .bx .l{color:#5b6475;font-size:11.5px}.pdfdoc .bx .v{font-size:19px;font-weight:800}
-.pdfdoc h3{font-size:15px;margin:16px 0 6px;color:#0b111d}.pdfdoc table{width:100%;border-collapse:collapse;font-size:12px}.pdfdoc th{background:#eef1f6;font-weight:700;padding:5px 6px;border-bottom:1px solid #cfd5df}.pdfdoc td{padding:4px 6px;border-bottom:1px solid #e7eaf0}
-.pdfdoc p{margin:6px 0;font-size:11.5px}.pdfdoc .n{color:#5b6475}.pdfdoc .w{color:#a1261b}
+.pdfdoc{background:#fff;color:#1b2333;font:11px/1.35 -apple-system,'Segoe UI',Roboto,Arial,sans-serif;padding:0;width:100%;box-sizing:border-box}.pdfdoc *{box-sizing:border-box}
+.pdfdoc .hd{border-bottom:3px solid #c6f432;padding-bottom:5px;margin-bottom:8px}.pdfdoc .t{font-size:18px;font-weight:800}.pdfdoc .d{color:#5b6475;font-size:10.5px}
+.pdfdoc .bxs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:4px}.pdfdoc .bx{border:1px solid #dde2ea;border-radius:6px;padding:5px 8px}.pdfdoc .bx .l{color:#5b6475;font-size:10px}.pdfdoc .bx .v{font-size:15px;font-weight:800}
+.pdfdoc h3{font-size:12.5px;margin:10px 0 4px;color:#0b111d}.pdfdoc table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:auto}.pdfdoc th{background:#eef1f6;font-weight:700;padding:3px 5px;border-bottom:1px solid #cfd5df}.pdfdoc td{padding:2px 5px;border-bottom:1px solid #e7eaf0;word-break:break-word}
+.pdfdoc p{margin:3px 0;font-size:10px}.pdfdoc .n{color:#5b6475}.pdfdoc .w{color:#a1261b}
 </style>
 </head>
 <body>
@@ -1208,9 +1208,9 @@ async function exportPDF() {
     toast('Правя PDF…');
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
     const el = document.createElement('div'); el.className = 'pdfdoc'; el.innerHTML = pdfHtml();
-    const wrap = document.createElement('div'); wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:760px'; wrap.appendChild(el); document.body.appendChild(wrap);
+    const wrap = document.createElement('div'); wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:700px'; wrap.appendChild(el); document.body.appendChild(wrap);
     try {
-      await html2pdf().set({ margin: [10, 10, 12, 10], filename: 'gumi-spravka-' + todayStr() + '.pdf', image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: 2, backgroundColor: '#ffffff' }, jsPDF: { unit: 'mm', format: 'a4' }, pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'h3', '.bx'] } }).from(el).save();
+      await html2pdf().set({ margin: [8, 8, 10, 8], filename: 'gumi-spravka-' + todayStr() + '.pdf', image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: 2, backgroundColor: '#ffffff' }, jsPDF: { unit: 'mm', format: 'a4' }, pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'h3', '.bx'] } }).from(el).save();
     } finally { wrap.remove(); }
     toast('PDF е готов ✔');
   } catch (e) { toast(e.message || 'Грешка при PDF', 1); }
