@@ -335,6 +335,7 @@ body{display:flex;flex-direction:column;padding-bottom:0;background-attachment:s
 .vtabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0 8px}.vtabs button{border:1px solid var(--line);background:var(--soft);color:var(--txt);border-radius:12px;min-height:38px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}.vtabs button.on{background:var(--navy);color:var(--lime);border-color:transparent}
 .pgrid{display:grid;grid-template-columns:64px 1fr 1fr;gap:6px;align-items:center}.pgh{font-size:11.5px;color:var(--mut);font-weight:700}.pgd{font-weight:800;font-size:14px;line-height:1.1}.pgd small{display:block;font-size:10.5px;color:var(--mut);font-weight:600}
 .pgi{display:flex;align-items:center;gap:4px}.pgi input{width:100%;min-width:0;min-height:38px;padding:0 8px;text-align:right}.pgi span{color:var(--mut);font-size:13px}
+.bud .bud-n{font-size:30px;font-weight:800;color:var(--lime);margin:2px 0}.bud-r{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}.bud-r>div{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:14px}.bud-r b{white-space:nowrap}.bud-t{font-weight:800}
 </style>
 </head>
 <body>
@@ -499,6 +500,31 @@ function priceFor(svc, c) {
   const P = pricesOf(svc), t = vtypeOf(c), d = diamOf(putSize(c)), g = (((P.grid || {})[t]) || {})[d] || {};
   return { norims: +g.norims || +P.norims || 0, rims: +g.rims || +P.rims || 0, own: { norims: +g.norims || 0, rims: +g.rims || 0 }, t, d };
 }
+// очакван разход за сезонната смяна по уговорените цени
+function seasonStart() { const t = todayStr(), y = +t.slice(0, 4), m = +t.slice(5, 7);
+  return TARGET === 'winter' ? (m >= 9 ? y : y - 1) + '-09-01' : y + '-03-01'; }
+function budget() {
+  const left = DB.cars.filter(c => !c.allSeason && c.mounted !== TARGET), by = {}, nop = [];
+  let sum = 0;
+  left.forEach(c => {
+    const put = c.sets[TARGET], base = put && put.rims ? 'rims' : 'norims', P = priceFor(c.service, c), v = P[base];
+    if (!v) { nop.push(c); return; }
+    sum += v; const x = by[c.service] = by[c.service] || { n: 0, v: 0 }; x.n++; x.v += v;
+  });
+  const S0 = seasonStart(), done = DB.history.filter(x => x.type === 'change' && x.date >= S0 && x.text.endsWith('→ ' + SETN[TARGET].toLowerCase()));
+  const paid = done.reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0);
+  return { left, sum, by, nop, done, paid };
+}
+function budgetCard() {
+  const B = budget(), season = TARGET === 'winter' ? 'зимни' : 'летни';
+  if (!B.left.length && !B.done.length) return '';
+  return `<div class="card bud"><div class="mut">Остава да платим за смяна на ${season}</div>
+    <div class="bud-n">≈ ${eur(B.sum)}</div><div class="mut">${B.left.length - B.nop.length} ${B.left.length - B.nop.length === 1 ? 'кола' : 'коли'} по уговорените цени · без допълнителни услуги</div>
+    ${Object.keys(B.by).length ? `<div class="bud-r">${Object.entries(B.by).sort((a, b) => b[1].v - a[1].v).map(([sv, x]) => `<div><span>🔧 ${esc(sv)} · ${x.n} ${x.n === 1 ? 'кола' : 'коли'}</span><b>${eur(x.v)}</b></div>`).join('')}</div>` : ''}
+    ${B.done.length ? `<div class="bud-r"><div><span>✔ Вече платено този сезон · ${B.done.length} ${B.done.length === 1 ? 'смяна' : 'смени'}</span><b>${eur(B.paid)}</b></div><div class="bud-t"><span>Общо за сезона ≈</span><b>${eur(B.paid + B.sum)}</b></div></div>` : ''}
+    ${B.nop.length ? `<div class="calc" style="background:var(--badbg);margin:10px 0 0">⚠️ ${B.nop.length} ${B.nop.length === 1 ? 'кола няма' : 'коли нямат'} цена (липсва размер или цена за размера) и ${B.nop.length === 1 ? 'не е' : 'не са'} в сумата:<br><span class="mut" style="color:inherit">${B.nop.slice(0, 12).map(c => esc(c.plate)).join(', ')}${B.nop.length > 12 ? ' и още ' + (B.nop.length - 12) : ''}</span></div>` : ''}
+  </div>`;
+}
 /* ---------- връзка със сървъра (Google Apps Script) ---------- */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyRoEI135mh8fscjhUUvCd6TFUmfF4xEltqvsgIggGjMg7fohaBgC8MprsWvCgAKgZ1wg/exec';   // Apps Script → Внедряване → адресът, който завършва на /exec
 let TOKEN = '';
@@ -595,6 +621,7 @@ const V = {
     ];
     let h = canEdit() ? `<div class="tiles" style="grid-template-columns:repeat(4,1fr)">${tiles.map(t => `<button class="tile" style="background-color:${t[3]}" onclick="${t[2]}"><i>${t[0]}</i>${t[1]}</button>`).join('')}</div>` : '';
     h = legalBanner() + h;
+    if (canEdit() && budgetCard()) h += `<h2>Разход за смяната</h2>` + budgetCard();
     const todo = DB.cars.filter(isTodo);
     if (todo.length && canEdit()) h += `<h2>Въведи гумите (${todo.length})</h2><div class="mut" style="margin:-4px 0 10px">Отвори колата, сложи размера и въведи гумите, които има.</div>`
       + carGrid(todo.slice(0, 6), c => carTile(c, c.size || 'няма размер')) + (todo.length > 6 ? `<button class="btn sec" style="margin-top:0" onclick="go('cars',{tab:'todo',size:'',q:''})">Виж всички ${todo.length}</button>` : '');
@@ -902,6 +929,7 @@ const V = {
       ['Разходи ' + YEAR, Math.round(costAll) + '<small>€</small>', 'средно ' + eur(costAll / tot) + ' на кола', 'var(--vio)'],
       ['Брак ' + YEAR, hy.filter(x => x.type === 'scrap').length + '<small>гуми</small>', '', 'var(--bad)']
     ]) + `
+      ${budgetCard() ? '<h2>Разход за смяната</h2>' + budgetCard() : ''}
       <h2>Гуми за купуване</h2>${orderCard()}
       <h2>Сравнение на сервизите · ${YEAR}</h2>`;
     h += statGrid(DB.services.map(sv => {
