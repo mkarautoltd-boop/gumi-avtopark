@@ -621,7 +621,6 @@ const V = {
     ];
     let h = canEdit() ? `<div class="tiles" style="grid-template-columns:repeat(4,1fr)">${tiles.map(t => `<button class="tile" style="background-color:${t[3]}" onclick="${t[2]}"><i>${t[0]}</i>${t[1]}</button>`).join('')}</div>` : '';
     h = legalBanner() + h;
-    if (canEdit() && budgetCard()) h += `<h2>Разход за смяната</h2>` + budgetCard();
     const todo = DB.cars.filter(isTodo);
     if (todo.length && canEdit()) h += `<h2>Въведи гумите (${todo.length})</h2><div class="mut" style="margin:-4px 0 10px">Отвори колата, сложи размера и въведи гумите, които има.</div>`
       + carGrid(todo.slice(0, 6), c => carTile(c, c.size || 'няма размер')) + (todo.length > 6 ? `<button class="btn sec" style="margin-top:0" onclick="go('cars',{tab:'todo',size:'',q:''})">Виж всички ${todo.length}</button>` : '');
