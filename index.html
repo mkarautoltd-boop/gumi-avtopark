@@ -340,7 +340,7 @@ body{display:flex;flex-direction:column;padding-bottom:0;background-attachment:s
 .pdfdoc{background:#fff;color:#1b2333;font:11px/1.35 -apple-system,'Segoe UI',Roboto,Arial,sans-serif;padding:0;width:100%;box-sizing:border-box}.pdfdoc *{box-sizing:border-box}
 .pdfdoc .hd{border-bottom:3px solid #c6f432;padding-bottom:5px;margin-bottom:8px}.pdfdoc .t{font-size:18px;font-weight:800}.pdfdoc .d{color:#5b6475;font-size:10.5px}
 .pdfdoc .bxs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:4px}.pdfdoc .bx{border:1px solid #dde2ea;border-radius:6px;padding:5px 8px}.pdfdoc .bx .l{color:#5b6475;font-size:10px}.pdfdoc .bx .v{font-size:15px;font-weight:800}
-.pdfdoc h3{font-size:12.5px;margin:10px 0 4px;color:#0b111d}.pdfdoc table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:auto}.pdfdoc th{background:#eef1f6;font-weight:700;padding:3px 5px;border-bottom:1px solid #cfd5df}.pdfdoc td{padding:2px 5px;border-bottom:1px solid #e7eaf0;word-break:break-word}
+.pdfdoc h3{font-size:12.5px;margin:10px 0 4px;color:#0b111d}.pdfdoc table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:auto}.pdfdoc th{text-align:left;background:#eef1f6;font-weight:700;padding:3px 5px;border-bottom:1px solid #cfd5df}.pdfdoc td{padding:2px 5px;border-bottom:1px solid #e7eaf0;word-break:break-word}
 .pdfdoc p{margin:3px 0;font-size:10px}.pdfdoc .n{color:#5b6475}.pdfdoc .w{color:#a1261b}
 </style>
 </head>
@@ -856,6 +856,20 @@ const V = {
     return h + `<h2>Потребители</h2><div class="card" id="usersBox">${usersHtml()}</div>`;
   },
 
+  offer() {
+    header('Запитване за оферта', 'report');
+    const O = S.of;
+    return `<div class="calc">Избери кои гуми да влязат и колко броя. PDF-ът е без нашите цени — сервизът попълва цена, марка и DOT.</div>
+      <div class="card">${O.rows.map((r, i) => `<div class="prow"><label style="display:flex;gap:10px;align-items:center;flex:1;min-width:0;cursor:pointer"><input type="checkbox" ${r.on ? 'checked' : ''} onchange="S.of.rows[${i}].on=this.checked">
+        <span>${ICO[r.k]} <b>${esc(r.size)}</b><div class="mut">${SETN[r.k]}${r.van ? ' · C (бус)' : ''} · ${r.cars} ${r.cars === 1 ? 'кола' : 'коли'}</div></span></label>
+        <input class="bp" inputmode="numeric" value="${r.n}" oninput="S.of.rows[${i}].n=this.value" aria-label="Брой ${esc(r.size)}"><span class="bx">бр.</span></div>`).join('')}</div>
+      <label for="o_to">До сервиз</label><input id="o_to" list="o_svcs" value="${esc(O.to)}" placeholder="име на сервиза / магазина" oninput="S.of.to=this.value"><datalist id="o_svcs">${DB.services.map(x => `<option value="${esc(x)}">`).join('')}</datalist>
+      <div class="row"><div><label for="o_from">От (фирма / лице)</label><input id="o_from" value="${esc(O.from)}" oninput="S.of.from=this.value"></div><div><label for="o_tel">Телефон</label><input id="o_tel" inputmode="tel" value="${esc(O.tel)}" oninput="S.of.tel=this.value"></div></div>
+      <label for="o_note">Бележка</label><textarea id="o_note" placeholder="напр. срок за доставка, с монтаж или без" oninput="S.of.note=this.value">${esc(O.note)}</textarea>
+      <label class="chk" style="border:0"><input type="checkbox" ${O.mount ? 'checked' : ''} onchange="S.of.mount=this.checked"> Цената да е с монтаж и баланс</label>
+      <button class="btn" onclick="offerPDF()">📄 Свали PDF за изпращане</button>`;
+  },
+
   editSet() {
     const c = carById(S.sel), k = S.nk, s = c && c.sets[k]; if (!s) return go('car');
     header(SETN[k] + ' · ' + c.plate, 'car');
@@ -959,7 +973,7 @@ const V = {
       ['Брак ' + YEAR, hy.filter(x => x.type === 'scrap').length + '<small>гуми</small>', '', 'var(--bad)']
     ]) + `
       ${budgetCard() ? '<h2>Разход за смяната</h2>' + budgetCard() : ''}
-      <h2>Гуми за купуване</h2>${buyCostCard()}${orderCard()}
+      <h2>Гуми за купуване</h2>${buyCostCard()}${orderList().length && canEdit() ? `<button class="btn" style="margin:0 0 10px" onclick="openOffer()">📨 Запитване за оферта (PDF за сервиза)</button>` : ''}${orderCard()}
       <h2>Сравнение на сервизите · ${YEAR}</h2>`;
     h += statGrid(DB.services.map(sv => {
       const hs = hy.filter(x => x.service === sv), ch = hs.filter(x => x.type === 'change');
@@ -1003,7 +1017,7 @@ const TABICO = {
   report: '<path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/>'
 };
 const TABEMO = { home: '🏠', trips: '🚚', cars: '🚗', store: '🛞', report: '📊' };
-const TABOF = { editSet: 'cars', bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
+const TABOF = { offer: 'report', editSet: 'cars', bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
 function renderTabbar() {
   const openTrips = DB.trips.filter(t => !tripDone(t)).length;
   const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).length;
@@ -1203,17 +1217,40 @@ function pdfHtml() {
   if (wait.length) h += `<h3>Чакат смяна на ${sm} (${wait.length})</h3>` + T(['Кола', 'Модел', 'Размер', 'Сервиз', 'Цена'], wait.map(c => { const put = c.sets[TARGET], v = priceFor(c.service, c)[put && put.rims ? 'rims' : 'norims']; return [esc(c.plate), esc(c.model), esc(c.size || '—'), esc(c.service), v ? eur(v) : '—']; }), 'llllr');
   return h;
 }
-async function exportPDF() {
+async function exportPDF() { return makePDF(pdfHtml(), 'gumi-spravka-' + todayStr() + '.pdf'); }
+async function makePDF(html, filename) {
   try {
     toast('Правя PDF…');
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
-    const el = document.createElement('div'); el.className = 'pdfdoc'; el.innerHTML = pdfHtml();
+    const el = document.createElement('div'); el.className = 'pdfdoc'; el.innerHTML = html;
     const wrap = document.createElement('div'); wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:700px'; wrap.appendChild(el); document.body.appendChild(wrap);
     try {
-      await html2pdf().set({ margin: [8, 8, 10, 8], filename: 'gumi-spravka-' + todayStr() + '.pdf', image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: 2, backgroundColor: '#ffffff' }, jsPDF: { unit: 'mm', format: 'a4' }, pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'h3', '.bx'] } }).from(el).save();
+      await html2pdf().set({ margin: [8, 8, 10, 8], filename, image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: 2, backgroundColor: '#ffffff' }, jsPDF: { unit: 'mm', format: 'a4' }, pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'h3', '.bx'] } }).from(el).save();
     } finally { wrap.remove(); }
     toast('PDF е готов ✔');
   } catch (e) { toast(e.message || 'Грешка при PDF', 1); }
+}
+function openOffer() {
+  let saved = {}; try { saved = JSON.parse(localStorage.getItem('gumi_offer') || '{}'); } catch (e) {}
+  const rows = orderList().map(o => { const cs = DB.cars.filter(c => c.size === o.size); return { k: o.k, size: o.size, n: o.n, cars: o.cars, on: true, van: cs.some(c => vtypeOf(c) === 'van') || /\d{2}\s*[CС](?![A-Za-zА-Яа-я])/i.test(o.size) }; });
+  go('offer', { of: { rows, to: '', from: saved.from || USER.name || '', tel: saved.tel || '', note: '', mount: true } });
+}
+function offerHtml() {
+  const O = S.of, R = O.rows.filter(r => r.on && parseInt(r.n, 10) > 0);
+  const tot = R.reduce((a, r) => a + parseInt(r.n, 10), 0);
+  return `<div class="hd"><div class="t">Запитване за оферта — автомобилни гуми</div><div class="d">${fmt(todayStr())}${O.to ? ' · до: <b>' + esc(O.to) + '</b>' : ''}</div></div>
+    <p style="font-size:11.5px;margin:0 0 8px">Моля, изпратете оферта за следните гуми${O.mount ? ', <b>с монтаж и баланс</b>' : ''}. За всяка позиция посочете марка и модел, DOT (година на производство) и единична цена с ДДС.</p>
+    <table><thead><tr><th>№</th><th>Размер</th><th>Сезон</th><th>Тип</th><th style="text-align:right">Брой</th><th style="width:22%">Марка / модел</th><th style="width:9%">DOT</th><th style="text-align:right;width:12%">Цена / бр.</th><th style="text-align:right;width:12%">Сума</th></tr></thead>
+    <tbody>${R.map((r, i) => `<tr style="height:26px"><td>${i + 1}</td><td><b>${esc(r.size)}</b></td><td>${SETN[r.k]}</td><td>${r.van ? 'C (бус)' : 'лека'}</td><td style="text-align:right"><b>${parseInt(r.n, 10)}</b></td><td></td><td></td><td></td><td></td></tr>`).join('')}
+    <tr style="height:26px"><td colspan="4"><b>Общо</b></td><td style="text-align:right"><b>${tot}</b></td><td colspan="3"></td><td></td></tr></tbody></table>
+    ${O.note ? `<p style="font-size:11px;margin-top:8px"><b>Бележка:</b> ${esc(O.note)}</p>` : ''}
+    ${R.some(r => r.van) || R.some(r => r.k === 'winter') ? `<p style="font-size:11px;margin-top:10px">${R.some(r => r.van) ? 'При гуми за бус (C) товарният индекс да е като на сегашните (напр. 109/107). ' : ''}${R.some(r => r.k === 'winter') ? 'Зимните — с маркировка 3PMSF (снежинка).' : ''}</p>` : ''}
+    <div style="margin-top:22px;font-size:11.5px;display:flex;justify-content:space-between"><div>От: <b>${esc(O.from || '')}</b>${O.tel ? '<br>Тел.: ' + esc(O.tel) : ''}</div><div style="text-align:right;color:#5b6475">Валидност на офертата: ________</div></div>`;
+}
+function offerPDF() {
+  const O = S.of; if (!O.rows.some(r => r.on && parseInt(r.n, 10) > 0)) return toast('Избери поне една позиция', 1);
+  try { localStorage.setItem('gumi_offer', JSON.stringify({ from: O.from, tel: O.tel })); } catch (e) {}
+  makePDF(offerHtml(), 'zapitvane-gumi-' + todayStr() + (O.to ? '-' + O.to.replace(/[^\wА-Яа-я]+/g, '-') : '') + '.pdf');
 }
 function exportCSV() {
   const set = (c, k) => { const s = c.sets[k]; return s ? [have(s), s.tread, s.dot, s.rims ? 'да' : 'не'] : ['', '', '', '']; };
