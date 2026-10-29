@@ -673,8 +673,8 @@ const V = {
 
   trips() {
     header('Натоварване', 'home');
-    let h = canEdit() ? `<button class="btn" style="margin:0 0 12px" onclick="go('newTrip',{picked:[]})">+ Нов рейс</button>` : '';
     const open = DB.trips.filter(t => !tripDone(t)), done = DB.trips.filter(tripDone);
+    let h = canEdit() ? `<div class="row" style="margin-bottom:12px"><button class="btn" style="margin:0" onclick="go('newTrip',{picked:[]})">+ Нов рейс</button>${open.length ? `<button class="btn sec" style="margin:0" onclick="openMsg()">💬 Съобщение за Viber</button>` : ''}</div>` : '';
     h += open.length ? tripGrid(open) : '<div class="card mut">Няма активни рейсове.</div>';
     if (done.length) h += '<h2>Приключени</h2>' + tripGrid(done);
     return h;
@@ -684,6 +684,7 @@ const V = {
     const t = DB.trips.find(x => x.id === S.trip); if (!t) return go('trips');
     header(`${t.bus} → ${t.service}`, 'trips');
     let h = `<div class="card"><div class="kv"><span>Дата</span><b>${fmt(t.date)}</b></div><div class="kv"><span>Карат се</span><b>${SETN[TARGET]} гуми</b></div><div class="kv"><span>Връщат се в склада</span><b>${SETN[other(TARGET)]} гуми</b></div><div class="kv"><span>Прогрес</span><b>${tripSummary(t)}</b></div></div>
+      ${canEdit() && !tripDone(t) ? `<button class="btn sec" style="margin:0 0 10px" onclick="openMsg('${t.id}')">💬 Съобщение за Viber</button>` : ''}
       <div class="mut" style="margin:4px 0 10px">Натисни при всяка стъпка: натоварих → сменени (попълва км и протектор) → прибрах в склада.</div>`;
     h += t.items.map(it => {
       const c = carById(it.carId), ts = c.sets[TARGET] || {};
@@ -859,6 +860,20 @@ const V = {
     return h + `<h2>Потребители</h2><div class="card" id="usersBox">${usersHtml()}</div>`;
   },
 
+  msg() {
+    header('Съобщение за Viber', 'trips');
+    const M = S.msg, open = DB.trips.filter(t => !tripDone(t));
+    return `<div class="calc">Избери рейсовете и датите. Текстът се прави сам — можеш да го поправиш, после <b>Копирай</b> или <b>Сподели → Viber</b>.</div>
+      <div class="card">${open.map(t => `<div class="ofr${M.ids.includes(t.id) ? '' : ' off'}" style="grid-template-columns:34px 1fr"><button type="button" class="ofc" onclick="msgToggle('${t.id}')">${M.ids.includes(t.id) ? '✓' : ''}</button>
+        <div class="oft" onclick="msgToggle('${t.id}')">🚚 <b>${esc(t.service)}</b> · ${esc(t.bus)}<div class="mut">${fmt(t.date)} · ${t.items.filter(x => x.step < 2).length} коли за смяна</div></div></div>`).join('')}</div>
+      <div class="row"><div><label for="m_from">От дата</label><input type="date" id="m_from" value="${M.from}" onchange="S.msg.from=this.value;msgRefresh()"></div><div><label for="m_to">До дата</label><input type="date" id="m_to" value="${M.to}" onchange="S.msg.to=this.value;msgRefresh()"></div></div>
+      ${msgServices().map(sv => { const C = M.contacts[sv] || {}, k = esc(sv).replace(/'/g, "\\'"); return `<div class="card" style="margin-top:10px"><b>${esc(sv)}</b>
+        <div class="row"><div><label>Телефон</label><input inputmode="tel" value="${esc(C.tel || '')}" placeholder="089…" oninput="msgContact('${k}','tel',this.value)"></div><div><label>Линк към картата</label><input value="${esc(C.map || '')}" placeholder="https://maps.app.goo.gl/…" oninput="msgContact('${k}','map',this.value)"></div></div></div>`; }).join('')}
+      <label for="m_txt">Съобщение</label><textarea id="m_txt" style="min-height:320px;font-size:14px" oninput="S.msg.edited=1">${esc(msgText())}</textarea>
+      <div class="row"><button class="btn sec" onclick="msgCopy()">📋 Копирай</button><button class="btn" onclick="msgShare()">📤 Сподели</button></div>
+      ${M.edited ? `<button class="plink" onclick="S.msg.edited=0;$('m_txt').value=msgText()">↺ Върни автоматичния текст</button>` : ''}`;
+  },
+
   offer() {
     header('Запитване за оферта', 'report');
     const O = S.of;
@@ -1020,7 +1035,7 @@ const TABICO = {
   report: '<path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/>'
 };
 const TABEMO = { home: '🏠', trips: '🚚', cars: '🚗', store: '🛞', report: '📊' };
-const TABOF = { offer: 'report', editSet: 'cars', bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
+const TABOF = { msg: 'trips', offer: 'report', editSet: 'cars', bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
 function renderTabbar() {
   const openTrips = DB.trips.filter(t => !tripDone(t)).length;
   const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).length;
@@ -1232,6 +1247,45 @@ async function makePDF(html, filename) {
     } finally { wrap.remove(); }
     toast('PDF е готов ✔');
   } catch (e) { toast(e.message || 'Грешка при PDF', 1); }
+}
+// готово съобщение за Viber групата: колите от рейсовете, по сервизи
+const WD = ['Неделя', 'Понеделник', 'Вторник', 'Сряда', 'Четвъртък', 'Петък', 'Събота'];
+const dShort = d => d.slice(8, 10) + '.' + d.slice(5, 7) + '.';
+const wDay = d => WD[new Date(d + 'T12:00:00').getDay()];
+const addDays = (d, n) => { const x = new Date(d + 'T12:00:00'); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
+const NUMW = ['', 'един', 'два', 'три', 'четири', 'пет', 'шест', 'седем', 'осем', 'девет', 'десет'];
+function openMsg(tid) {
+  let contacts = {}; try { contacts = JSON.parse(localStorage.getItem('gumi_contacts') || '{}'); } catch (e) {}
+  const open = DB.trips.filter(t => !tripDone(t)), ids = tid ? [tid] : open.map(t => t.id);
+  const from = open.filter(t => ids.includes(t.id)).map(t => t.date).sort()[0] || todayStr();
+  go('msg', { msg: { ids, from, to: addDays(from, 4), contacts, edited: 0 } });
+}
+function msgTrips() { return DB.trips.filter(t => S.msg.ids.includes(t.id)); }
+function msgServices() { return [...new Set(msgTrips().map(t => t.service))]; }
+function msgText() {
+  const M = S.msg, T = msgTrips(), svs = msgServices();
+  const days = Math.max(1, Math.round((new Date(M.to) - new Date(M.from)) / 864e5) + 1);
+  const put = TARGET === 'winter' ? 'летни с зимни' : 'зимни с летни';
+  const plates = sv => [...new Set(T.filter(t => t.service === sv).flatMap(t => t.items.filter(x => x.step < 2).map(x => x.carId)))].map(id => id.replace(/\s/g, ''));
+  let txt = `Здравейте колеги, предстои смяна на ${put} гуми.${svs.length > 1 ? ` Има ${NUMW[svs.length] === 'два' ? 'две' : (NUMW[svs.length] || svs.length)} гумаджийници, с които работим.` : ''} ${svs.length > 1 ? 'Затова както следва от' : 'От'} ${dShort(M.from)} (${wDay(M.from)}) до ${dShort(M.to)} (${wDay(M.to)}) автомобилите с тези номера:`;
+  svs.forEach(sv => {
+    const C = M.contacts[sv] || {}, P = plates(sv); if (!P.length) return;
+    txt += `\n\n\n${P.join('\n\n')}\n\n\nТрябва да са тук:\nВулканизатор ${sv}${C.tel ? '\n' + C.tel : ''}${C.map ? '\n' + C.map : ''}`;
+  });
+  txt += `\n\n\nГумите ще са на място, вие нямате ангажимент да ги носите и вземате след това в рамките на ${days <= 10 ? (days === 1 ? 'този ден' : 'тези ' + NUMW[days] + ' дни') : 'тези ' + days + ' дни'}. Моля, при смяната да напомните на гумаджиите да надпишат гумите.`;
+  return txt;
+}
+function msgRefresh() { if (!S.msg.edited && $('m_txt')) $('m_txt').value = msgText(); }
+function msgToggle(id) { const L = S.msg.ids, i = L.indexOf(id); if (i < 0) L.push(id); else L.splice(i, 1); S.msg.edited = 0; render(); }
+function msgContact(sv, f, v) { (S.msg.contacts[sv] = S.msg.contacts[sv] || {})[f] = v.trim(); try { localStorage.setItem('gumi_contacts', JSON.stringify(S.msg.contacts)); } catch (e) {} msgRefresh(); }
+async function msgCopy() {
+  const t = $('m_txt').value;
+  try { await navigator.clipboard.writeText(t); toast('Копирано ✔ — постави го във Viber'); }
+  catch (e) { $('m_txt').select(); document.execCommand('copy'); toast('Копирано ✔'); }
+}
+async function msgShare() {
+  const t = $('m_txt').value;
+  if (navigator.share) { try { await navigator.share({ text: t }); } catch (e) {} } else msgCopy();
 }
 function openOffer() {
   let saved = {}; try { saved = JSON.parse(localStorage.getItem('gumi_offer') || '{}'); } catch (e) {}
