@@ -50,7 +50,7 @@ const DIAMS = ['13', '14', '15', '16', '17', '18', '19', '20', '21', '22'];
 const LAT = { A: 'А', B: 'В', C: 'С', E: 'Е', H: 'Н', K: 'К', M: 'М', O: 'О', P: 'Р', T: 'Т', X: 'Х', Y: 'У' };
 
 let DB = null, TARGET = 'winter', ROAD_INFO = '', ROAD_DIAG = {};
-const SERVER_VERSION = '7';
+const SERVER_VERSION = '8';
 let RAW = null, RAW_DIRTY = false;   // копие на листовете в паметта на Google (кеш), за да не се чете таблицата при всяко действие
 const SHEETS = {};
 
@@ -432,6 +432,13 @@ const ACT = {
     if (!b.cars || !b.cars.length) throw new Error('Избери поне една кола');
     const t = { id: nid(), date: b.date || todayStr(), bus: b.bus, service: b.service, items: b.cars.filter(id => carById(id)).map(id => ({ carId: id, step: 0 })) };
     DB.trips.push(t); return t.id;
+  },
+  addToTrip(b) {
+    const t = DB.trips.find(x => x.id === b.tripId); if (!t) throw new Error('Няма такъв рейс');
+    const ids = (b.cars || []).filter(id => carById(id) && !tripOf(id));
+    if (!ids.length) throw new Error('Избери поне една кола');
+    ids.forEach(id => t.items.push({ carId: id, step: 0 }));
+    return ids.length;
   },
   cycleTire(b) {
     const c = carById(b.carId), s = c && c.sets[b.k]; if (!s) throw new Error('Няма такъв комплект');

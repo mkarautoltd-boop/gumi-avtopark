@@ -326,7 +326,7 @@ body{display:flex;flex-direction:column;padding-bottom:0;background-attachment:s
   .szgrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
   .tiles{max-width:760px}
   main.v-car,main.v-trip{max-width:860px}
-  main.v-change,main.v-newTires,main.v-newCar,main.v-addFree,main.v-expense,main.v-profile,main.v-settings,main.v-newTrip,main.v-bulkSvc,main.v-assign{max-width:680px}
+  main.v-change,main.v-newTires,main.v-newCar,main.v-addFree,main.v-expense,main.v-profile,main.v-settings,main.v-newTrip,main.v-tripAdd,main.v-bulkSvc,main.v-assign{max-width:680px}
   .toast{left:auto;right:24px;bottom:24px;max-width:420px}
   .login{margin-top:60px}
 }
@@ -684,7 +684,7 @@ const V = {
     const t = DB.trips.find(x => x.id === S.trip); if (!t) return go('trips');
     header(`${t.bus} → ${t.service}`, 'trips');
     let h = `<div class="card"><div class="kv"><span>Дата</span><b>${fmt(t.date)}</b></div><div class="kv"><span>Карат се</span><b>${SETN[TARGET]} гуми</b></div><div class="kv"><span>Връщат се в склада</span><b>${SETN[other(TARGET)]} гуми</b></div><div class="kv"><span>Прогрес</span><b>${tripSummary(t)}</b></div></div>
-      ${canEdit() && !tripDone(t) ? `<button class="btn sec" style="margin:0 0 10px" onclick="openMsg('${t.id}')">💬 Съобщение за Viber</button>` : ''}
+      ${canEdit() && !tripDone(t) ? `<div class="row"><button class="btn sec" style="margin:0 0 10px" onclick="go('tripAdd',{picked:[]})">➕ Добави коли</button><button class="btn sec" style="margin:0 0 10px" onclick="openMsg('${t.id}')">💬 Съобщение за Viber</button></div>` : ''}
       <div class="mut" style="margin:4px 0 10px">Натисни при всяка стъпка: натоварих → сменени (попълва км и протектор) → прибрах в склада.</div>`;
     h += t.items.map(it => {
       const c = carById(it.carId), ts = c.sets[TARGET] || {};
@@ -708,6 +708,17 @@ const V = {
       <h2>Коли за рейса (${S.picked.length} избрани)</h2><div class="card">`;
     h += pool.map(c => `<label class="chk"><input type="checkbox" ${S.picked.includes(c.id) ? 'checked' : ''} onchange="togglePick('${c.id}')"><span style="flex:1"><b class="plate">${esc(c.plate)}</b> <span class="mut">${esc(c.model)} · ${esc(c.service)} · ${c.sets[TARGET].rims ? 'джанти' : 'без джанти'}</span></span></label>`).join('') || '<div class="mut">Всички коли са сменени или вече са в рейс.</div>';
     return h + `</div><button class="btn" onclick="saveTrip()">Създай рейса</button>`;
+  },
+
+  tripAdd() {
+    const t = DB.trips.find(x => x.id === S.trip); if (!t) return go('trips');
+    header('Добави коли', 'trip');
+    const pool = DB.cars.filter(c => !c.allSeason && c.mounted !== TARGET && !tripOf(c.id) && c.sets[TARGET]);
+    let h = `<div class="card"><div class="kv"><span>Рейс</span><b>${esc(t.bus)} → ${esc(t.service)}</b></div><div class="kv"><span>Дата</span><b>${fmt(t.date)}</b></div><div class="kv"><span>Вече в рейса</span><b>${t.items.length} коли</b></div></div>
+      ${(+DB.version || 0) < 8 ? '<div class="calc" style="background:var(--badbg)">⚠️ Сървърът е стара версия — първо сложи новия код в Apps Script (версия 8), иначе колите няма да се добавят.</div>' : ''}
+      <h2>Коли за добавяне (${S.picked.length} избрани)</h2><div class="card">`;
+    h += pool.map(c => `<label class="chk"><input type="checkbox" ${S.picked.includes(c.id) ? 'checked' : ''} onchange="togglePick('${c.id}')"><span style="flex:1"><b class="plate">${esc(c.plate)}</b> <span class="mut">${esc(c.model)} · ${esc(c.service)} · ${c.sets[TARGET].rims ? 'джанти' : 'без джанти'}</span></span></label>`).join('') || '<div class="mut">Няма свободни коли — всички са сменени или вече са в рейс.</div>';
+    return h + `</div><button class="btn" onclick="saveTripAdd()">Добави в рейса</button>`;
   },
 
   change() {
@@ -1035,7 +1046,7 @@ const TABICO = {
   report: '<path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/>'
 };
 const TABEMO = { home: '🏠', trips: '🚚', cars: '🚗', store: '🛞', report: '📊' };
-const TABOF = { msg: 'trips', offer: 'report', editSet: 'cars', bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
+const TABOF = { msg: 'trips', offer: 'report', editSet: 'cars', bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', tripAdd: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
 function renderTabbar() {
   const openTrips = DB.trips.filter(t => !tripDone(t)).length;
   const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).length;
@@ -1152,7 +1163,15 @@ function saveChange() {
   const d = { carId: S.sel, rotate: $('f_rot') ? $('f_rot').checked : false, date: val('f_date'), service: val('f_srv'), km: val('f_km'), treadOn: val('f_on'), treadOff: val('f_off'), ...billItems(), note: val('f_note') };
   busy(async () => { await api('change', d); toast('Смяната е записана ✔'); if (S.fromTrip) go('trip', { trip: S.fromTrip, fromTrip: '' }); else go('car'); });
 }
-function togglePick(id) { const i = S.picked.indexOf(id); if (i < 0) S.picked.push(id); else S.picked.splice(i, 1); const bus = val('f_bus'), srv = val('f_srv'), dt = val('f_date'); render(); $('f_bus').value = bus; $('f_srv').value = srv; $('f_date').value = dt; }
+function togglePick(id) {
+  const i = S.picked.indexOf(id); if (i < 0) S.picked.push(id); else S.picked.splice(i, 1);
+  if (!$('f_bus')) { const y = $('scr').scrollTop; render(); $('scr').scrollTop = y; return; }
+  const bus = val('f_bus'), srv = val('f_srv'), dt = val('f_date'); render(); $('f_bus').value = bus; $('f_srv').value = srv; $('f_date').value = dt;
+}
+function saveTripAdd() {
+  if (!S.picked.length) return toast('Избери поне една кола', 1);
+  busy(async () => { const n = await api('addToTrip', { tripId: S.trip, cars: S.picked }); toast(`Добавени ${n} коли ✔`); go('trip', { picked: [] }); });
+}
 function saveTrip() { busy(async () => { const id = await api('newTrip', { bus: val('f_bus'), service: val('f_srv'), date: val('f_date'), cars: S.picked }); toast('Рейсът е създаден ✔'); go('trip', { trip: id }); }); }
 function saveExpense() { if (!S.sel) return toast('Избери кола', 1); busy(async () => { await api('expense', { carId: S.sel, type: val('f_type'), date: val('f_date'), text: val('f_text'), service: val('f_srv'), cost: val('f_cost') }); toast('Разходът е записан ✔'); go('car'); }); }
 
