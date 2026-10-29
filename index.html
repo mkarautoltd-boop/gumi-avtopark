@@ -674,7 +674,7 @@ const V = {
   trips() {
     header('Натоварване', 'home');
     const open = DB.trips.filter(t => !tripDone(t)), done = DB.trips.filter(tripDone);
-    let h = canEdit() ? `<div class="row" style="margin-bottom:12px"><button class="btn" style="margin:0" onclick="go('newTrip',{picked:[]})">+ Нов рейс</button>${open.length ? `<button class="btn sec" style="margin:0" onclick="openMsg()">💬 Съобщение за Viber</button>` : ''}</div>` : '';
+    let h = canEdit() ? `<button class="btn" style="margin:0 0 12px" onclick="go('newTrip',{picked:[]})">+ Нов рейс</button>` : '';
     h += open.length ? tripGrid(open) : '<div class="card mut">Няма активни рейсове.</div>';
     if (done.length) h += '<h2>Приключени</h2>' + tripGrid(done);
     return h;
@@ -1256,7 +1256,7 @@ const addDays = (d, n) => { const x = new Date(d + 'T12:00:00'); x.setDate(x.get
 const NUMW = ['', 'един', 'два', 'три', 'четири', 'пет', 'шест', 'седем', 'осем', 'девет', 'десет'];
 function openMsg(tid) {
   let contacts = {}; try { contacts = JSON.parse(localStorage.getItem('gumi_contacts') || '{}'); } catch (e) {}
-  const open = DB.trips.filter(t => !tripDone(t)), ids = tid ? [tid] : open.map(t => t.id);
+  const open = DB.trips.filter(t => !tripDone(t)), T0 = DB.trips.find(t => t.id === tid), ids = T0 ? open.filter(t => t.date === T0.date).map(t => t.id) : open.map(t => t.id);
   const from = open.filter(t => ids.includes(t.id)).map(t => t.date).sort()[0] || todayStr();
   go('msg', { msg: { ids, from, to: addDays(from, 4), contacts, edited: 0 } });
 }
