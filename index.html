@@ -336,6 +336,7 @@ body{display:flex;flex-direction:column;padding-bottom:0;background-attachment:s
 .pgrid{display:grid;grid-template-columns:64px 1fr 1fr;gap:6px;align-items:center}.pgh{font-size:11.5px;color:var(--mut);font-weight:700}.pgd{font-weight:800;font-size:14px;line-height:1.1}.pgd small{display:block;font-size:10.5px;color:var(--mut);font-weight:600}
 .pgi{display:flex;align-items:center;gap:4px}.pgi input{width:100%;min-width:0;min-height:38px;padding:0 8px;text-align:right}.pgi span{color:var(--mut);font-size:13px}
 .bud .bud-n{font-size:30px;font-weight:800;color:var(--lime);margin:2px 0}.bud-r{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}.bud-r>div{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:14px}.bud-r b{white-space:nowrap}.bud-t{font-weight:800}
+.tp-r{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px}.tp-r>span:first-child{flex:1;min-width:0}.tp-r b{white-space:nowrap}.tp-in{display:flex;align-items:center;gap:4px}.tp-in input{width:90px;min-height:36px;padding:0 8px;text-align:right}.tp-in small{color:var(--mut);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -471,6 +472,30 @@ function sizesCard() {
       ${miss ? `<span class="badge b-bad">липсват ${miss} к-та</span>` : '<span class="badge b-ok">всички пълни</span>'}
     </button>`;
   }).join('')}</div>`;
+}
+// ориентировъчна цена за 1 гума (средна класа: Barum, Matador, Kumho, Nexen, Kleber), по 24gumi.bg, проверено 29.10.2026
+const TIRE_EST = { car: { 13: 45, 14: 50, 15: 55, 16: 70, 17: 90, 18: 110, 19: 135, 20: 160, 21: 180, 22: 200 }, van: { 14: 85, 15: 100, 16: 115, 17: 135 } };
+const SEASON_K = { winter: 1, summer: 0.8, all: 0.95 };
+function tireEst(size, k) {
+  const d = +diamOf(size); if (!d) return 0;
+  const car = DB.cars.find(c => c.size === size), t = car ? vtypeOf(car) : (/\d{2}\s*C\b/i.test(size) ? 'van' : 'car');
+  const T = t === 'van' ? TIRE_EST.van : TIRE_EST.car, ks = Object.keys(T).map(Number);
+  const near = ks.reduce((a, b) => Math.abs(b - d) < Math.abs(a - d) ? b : a);
+  const base = T[near] * (t === 'suv' ? 1.25 : 1);
+  return Math.round(base * (SEASON_K[k] || 1) / 5) * 5;
+}
+function buyCostCard() {
+  const L = orderList(); if (!L.length) return '';
+  let sum = 0, n = 0, miss = 0;
+  const rows = L.map(o => {
+    const p = tireEst(o.size, o.k), v = p * o.n;
+    if (p) { sum += v; n += o.n; } else miss += o.n;
+    return `<div class="tp-r"><span>${ICO[o.k]} <b>${esc(o.size)}</b> · ${o.n} ${o.n === 1 ? 'гума' : 'гуми'}</span>${p ? `<span class="mut">× ~${p} €</span><b>${eur(v)}</b>` : '<span class="mut">неясен размер</span>'}</div>`;
+  }).join('');
+  return `<div class="card bud" style="margin-top:10px"><div class="mut">Приблизително за купуване на гумите</div>
+    <div class="bud-n">≈ ${eur(sum)}</div><div class="mut">${n} ${n === 1 ? 'гума' : 'гуми'}${miss ? ` · <b style="color:var(--warn)">${miss} без размер не са в сумата</b>` : ''}</div>
+    <div class="bud-r">${rows}</div>
+    <div class="mut" style="margin-top:8px;font-size:12.5px">Средни цени от интернет за 1 гума, средна класа (Barum, Matador, Kumho, Kleber), с ДДС, без монтаж. Евтините марки са с около 20% по-ниски, а Michelin и Continental са с около 50% по-високи. Проверени са в 24gumi.bg на 29.10.2026.</div></div>`;
 }
 function orderCard() {
   const L = orderList(); if (!L.length) return '<div class="card mut">Всички коли имат пълни комплекти 👍</div>';
@@ -929,7 +954,7 @@ const V = {
       ['Брак ' + YEAR, hy.filter(x => x.type === 'scrap').length + '<small>гуми</small>', '', 'var(--bad)']
     ]) + `
       ${budgetCard() ? '<h2>Разход за смяната</h2>' + budgetCard() : ''}
-      <h2>Гуми за купуване</h2>${orderCard()}
+      <h2>Гуми за купуване</h2>${orderCard()}${buyCostCard()}
       <h2>Сравнение на сервизите · ${YEAR}</h2>`;
     h += statGrid(DB.services.map(sv => {
       const hs = hy.filter(x => x.service === sv), ch = hs.filter(x => x.type === 'change');
