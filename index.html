@@ -478,7 +478,7 @@ const TIRE_EST = { car: { 13: 45, 14: 50, 15: 55, 16: 70, 17: 90, 18: 110, 19: 1
 const SEASON_K = { winter: 1, summer: 0.8, all: 0.95 };
 function tireEst(size, k) {
   const d = +diamOf(size); if (!d) return 0;
-  const car = DB.cars.find(c => c.size === size), t = car ? vtypeOf(car) : (/\d{2}\s*C\b/i.test(size) ? 'van' : 'car');
+  const car = DB.cars.find(c => c.size === size), t = car ? vtypeOf(car) : (/\d{2}\s*[CС](?![A-Za-zА-Яа-я])/i.test(size) ? 'van' : 'car');
   const T = t === 'van' ? TIRE_EST.van : TIRE_EST.car, ks = Object.keys(T).map(Number);
   const near = ks.reduce((a, b) => Math.abs(b - d) < Math.abs(a - d) ? b : a);
   const base = T[near] * (t === 'suv' ? 1.25 : 1);
@@ -492,7 +492,7 @@ function buyCostCard() {
     if (p) { sum += v; n += o.n; } else miss += o.n;
     return `<div class="tp-r"><span>${ICO[o.k]} <b>${esc(o.size)}</b> · ${o.n} ${o.n === 1 ? 'гума' : 'гуми'}</span>${p ? `<span class="mut">× ~${p} €</span><b>${eur(v)}</b>` : '<span class="mut">неясен размер</span>'}</div>`;
   }).join('');
-  return `<div class="card bud" style="margin-top:10px"><div class="mut">Приблизително за купуване на гумите</div>
+  return `<div class="card bud" style="margin-bottom:10px"><div class="mut">Приблизително за купуване на гумите</div>
     <div class="bud-n">≈ ${eur(sum)}</div><div class="mut">${n} ${n === 1 ? 'гума' : 'гуми'}${miss ? ` · <b style="color:var(--warn)">${miss} без размер не са в сумата</b>` : ''}</div>
     <div class="bud-r">${rows}</div>
     <div class="mut" style="margin-top:8px;font-size:12.5px">Средни цени от интернет за 1 гума, средна класа (Barum, Matador, Kumho, Kleber), с ДДС, без монтаж. Евтините марки са с около 20% по-ниски, а Michelin и Continental са с около 50% по-високи. Проверени са в 24gumi.bg на 29.10.2026.</div></div>`;
@@ -517,7 +517,7 @@ const VT = { car: 'Лека кола', suv: 'Джип', van: 'Бус' }, VTSH = 
 const DIAMS = ['13', '14', '15', '16', '17', '18', '19', '20', '21', '22'];
 const VAN_RX = /MASTER|VIVARO|TRANSIT|SPRINTER|DUCATO|TRAFIC|JUMPER|BOXER|CRAFTER|TRANSPORTER|VITO|MOVANO|DAILY|JUMPY|EXPERT|PROACE|CARAVELLE|MULTIVAN|NV[234]00|МАСТЕР|ВИВАРО|ТРАНЗИТ|СПРИНТЕР|ТРАФИК|ДУКАТО/i;
 const SUV_RX = /\bX[1-7]\b|\bQ[2-8]\b|TOUAREG|TIGUAN|DUSTER|SPORTAGE|RAV ?4|CR-?V|X-?TRAIL|QASHQAI|KODIAQ|KAROQ|SANTA ?FE|TUCSON|PAJERO|OUTLANDER|CRUISER|CHEROKEE|\bGL[ABCEKS]\b|\bML\b|XC[469]0|CAYENNE|MACAN|RANGE ROVER|DISCOVERY|NAVARA|HILUX|L200|RANGER|AMAROK|KUGA|T-?ROC|SORENTO|DEFENDER|ДЖИП|ДЪСТЪР/i;
-const vtypeAuto = c => /\d{2}\s*C\b/i.test(c.size || '') || VAN_RX.test(c.model || '') ? 'van' : SUV_RX.test(c.model || '') ? 'suv' : 'car';
+const vtypeAuto = c => /\d{2}\s*[CС](?![A-Za-zА-Яа-я])/i.test(c.size || '') || VAN_RX.test(c.model || '') ? 'van' : SUV_RX.test(c.model || '') ? 'suv' : 'car';
 const vtypeOf = c => c.vtype || vtypeAuto(c);
 const diamOf = sz => { const t = String(sz || ''), m = t.match(/R\s*F?\s*(\d{2})/i) || t.match(/\d{3}\s*[\/ ]\s*\d{2}\s*[\/ \-]?\s*[A-Z]{0,2}\s*(\d{2})/i) || t.match(/^\s*(\d{2})\s*(?:C|"|цола)?\s*$/i); return m && +m[1] >= 12 && +m[1] <= 24 ? m[1] : ''; };
 const putSize = c => { const s = c.sets[other(c.mounted)]; return (s && s.size) || c.size; };
@@ -954,7 +954,7 @@ const V = {
       ['Брак ' + YEAR, hy.filter(x => x.type === 'scrap').length + '<small>гуми</small>', '', 'var(--bad)']
     ]) + `
       ${budgetCard() ? '<h2>Разход за смяната</h2>' + budgetCard() : ''}
-      <h2>Гуми за купуване</h2>${orderCard()}${buyCostCard()}
+      <h2>Гуми за купуване</h2>${buyCostCard()}${orderCard()}
       <h2>Сравнение на сервизите · ${YEAR}</h2>`;
     h += statGrid(DB.services.map(sv => {
       const hs = hy.filter(x => x.service === sv), ch = hs.filter(x => x.type === 'change');
