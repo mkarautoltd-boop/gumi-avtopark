@@ -342,6 +342,9 @@ body{display:flex;flex-direction:column;padding-bottom:0;background-attachment:s
 .pdfdoc .bxs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:4px}.pdfdoc .bx{border:1px solid #dde2ea;border-radius:6px;padding:5px 8px}.pdfdoc .bx .l{color:#5b6475;font-size:10px}.pdfdoc .bx .v{font-size:15px;font-weight:800}
 .pdfdoc h3{font-size:12.5px;margin:10px 0 4px;color:#0b111d}.pdfdoc table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:auto}.pdfdoc th{text-align:left;background:#eef1f6;font-weight:700;padding:3px 5px;border-bottom:1px solid #cfd5df}.pdfdoc td{padding:2px 5px;border-bottom:1px solid #e7eaf0;word-break:break-word}
 .pdfdoc p{margin:3px 0;font-size:10px}.pdfdoc .n{color:#5b6475}.pdfdoc .w{color:#a1261b}
+.ofr{display:grid;grid-template-columns:34px 1fr 64px auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.ofr:last-child{border:0}.ofr.off .oft,.ofr.off .ofn{opacity:.4}
+.ofc{width:30px;height:30px;border-radius:9px;border:2px solid var(--line);background:var(--soft);color:var(--limeink);font-weight:900;font-size:17px;cursor:pointer;padding:0}.ofr:not(.off) .ofc{background:var(--lime);border-color:var(--lime)}
+.oft{min-width:0;cursor:pointer;font-size:15px;line-height:1.3}.oft .mut{font-size:13px}.ofn{width:64px!important;min-height:40px;padding:0 8px;text-align:right}
 </style>
 </head>
 <body>
@@ -860,9 +863,9 @@ const V = {
     header('Запитване за оферта', 'report');
     const O = S.of;
     return `<div class="calc">Избери кои гуми да влязат и колко броя. PDF-ът е без нашите цени — сервизът попълва цена, марка и DOT.</div>
-      <div class="card">${O.rows.map((r, i) => `<div class="prow"><label style="display:flex;gap:10px;align-items:center;flex:1;min-width:0;cursor:pointer"><input type="checkbox" ${r.on ? 'checked' : ''} onchange="S.of.rows[${i}].on=this.checked">
-        <span>${ICO[r.k]} <b>${esc(r.size)}</b><div class="mut">${SETN[r.k]}${r.van ? ' · C (бус)' : ''} · ${r.cars} ${r.cars === 1 ? 'кола' : 'коли'}</div></span></label>
-        <input class="bp" inputmode="numeric" value="${r.n}" oninput="S.of.rows[${i}].n=this.value" aria-label="Брой ${esc(r.size)}"><span class="bx">бр.</span></div>`).join('')}</div>
+      <div class="card">${O.rows.map((r, i) => `<div class="ofr${r.on ? '' : ' off'}"><button type="button" class="ofc" onclick="S.of.rows[${i}].on=!S.of.rows[${i}].on;render()" aria-label="Включи ${esc(r.size)}">${r.on ? '✓' : ''}</button>
+        <div class="oft" onclick="S.of.rows[${i}].on=!S.of.rows[${i}].on;render()">${ICO[r.k]} <b>${esc(r.size)}</b><div class="mut">${SETN[r.k]}${r.van ? ' · C (бус)' : ''} · ${r.cars} ${r.cars === 1 ? 'кола' : 'коли'}</div></div>
+        <input class="ofn" inputmode="numeric" value="${r.n}" oninput="S.of.rows[${i}].n=this.value" aria-label="Брой ${esc(r.size)}"><span class="mut">бр.</span></div>`).join('')}</div>
       <label for="o_to">До сервиз</label><input id="o_to" list="o_svcs" value="${esc(O.to)}" placeholder="име на сервиза / магазина" oninput="S.of.to=this.value"><datalist id="o_svcs">${DB.services.map(x => `<option value="${esc(x)}">`).join('')}</datalist>
       <div class="row"><div><label for="o_from">От (фирма / лице)</label><input id="o_from" value="${esc(O.from)}" oninput="S.of.from=this.value"></div><div><label for="o_tel">Телефон</label><input id="o_tel" inputmode="tel" value="${esc(O.tel)}" oninput="S.of.tel=this.value"></div></div>
       <label for="o_note">Бележка</label><textarea id="o_note" placeholder="напр. срок за доставка, с монтаж или без" oninput="S.of.note=this.value">${esc(O.note)}</textarea>
