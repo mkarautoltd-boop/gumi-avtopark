@@ -336,6 +336,8 @@ body{display:flex;flex-direction:column;padding-bottom:0;background-attachment:s
 .pgrid{display:grid;grid-template-columns:64px 1fr 1fr;gap:6px;align-items:center}.pgh{font-size:11.5px;color:var(--mut);font-weight:700}.pgd{font-weight:800;font-size:14px;line-height:1.1}.pgd small{display:block;font-size:10.5px;color:var(--mut);font-weight:600}
 .pgi{display:flex;align-items:center;gap:4px}.pgi input{width:100%;min-width:0;min-height:38px;padding:0 8px;text-align:right}.pgi span{color:var(--mut);font-size:13px}
 .bud .bud-n{font-size:30px;font-weight:800;color:var(--lime);margin:2px 0}.bud-r{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}.bud-r>div{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:14px}.bud-r b{white-space:nowrap}.bud-t{font-weight:800}
+.hcost{border:0;background:none;color:var(--txt);font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:0;white-space:nowrap;align-self:flex-start}
+.hed{display:flex;gap:4px;align-items:center;align-self:flex-start}.hed input{width:76px;min-height:36px;padding:0 8px;text-align:right}.hed button{border:0;border-radius:10px;min-width:36px;min-height:36px;font-weight:800;cursor:pointer;background:var(--lime);color:var(--limeink)}.hed button.sec{background:var(--soft2);color:var(--txt)}
 </style>
 </head>
 <body>
@@ -500,6 +502,51 @@ function priceFor(svc, c) {
   const P = pricesOf(svc), t = vtypeOf(c), d = diamOf(putSize(c)), g = (((P.grid || {})[t]) || {})[d] || {};
   return { norims: +g.norims || +P.norims || 0, rims: +g.rims || +P.rims || 0, own: { norims: +g.norims || 0, rims: +g.rims || 0 }, t, d };
 }
+// поправка на сумата след смяната (сметката идва по-късно)
+function histCost(x) {
+  if (!canEdit() || (!x.cost && x.type !== 'change')) return `<div class="mut">${x.cost ? eur(x.cost) : ''}</div>`;
+  if (S.hEdit === x.id) return `<div class="hed"><input id="h_cost" inputmode="decimal" value="${x.cost === '' ? '' : x.cost}" aria-label="Сума"><span>€</span>
+    <button onclick="saveCosts([{id:'${x.id}',cost:val('h_cost')}])">✔</button><button class="sec" onclick="S.hEdit='';render()" aria-label="Откажи">✕</button></div>`;
+  return `<button class="hcost" onclick="S.hEdit='${x.id}';render();setTimeout(()=>$('h_cost')&&$('h_cost').select(),0)">${x.cost !== '' && x.cost != null ? eur(x.cost) : '+ сума'} ✏️</button>`;
+}
+async function saveCosts(items, msg) {
+  try { await api('setCosts', { items }); S.hEdit = ''; S.billFor = ''; toast(msg || 'Сумата е поправена ✔'); render(); }
+  catch (e) { toast(/Непознато/.test(e.message) ? 'Сървърът е стара версия — сложи новия код в Apps Script (версия 8).' : e.message, 1); }
+}
+// обща фактура за рейса: разпределя се по колите според уговорените цени
+function tripChanges(t) {
+  return t.items.filter(it => it.step >= 2).map(it => {
+    const c = carById(it.carId), h = DB.history.filter(x => x.carId === it.carId && x.type === 'change' && x.date >= t.date).sort((a, b) => b.date.localeCompare(a.date))[0];
+    return h ? { c, h, w: numv(h.cost) || priceFor(h.service || c.service, c)[c.sets[c.mounted] && c.sets[c.mounted].rims ? 'rims' : 'norims'] || 0 } : null;
+  }).filter(Boolean);
+}
+function splitBill(L, total) {
+  const W = L.reduce((a, x) => a + x.w, 0); let rest = Math.round(total * 100);
+  return L.map((x, i) => { const v = i === L.length - 1 ? rest : Math.round(total * 100 * (W ? x.w / W : 1 / L.length)); rest -= v; return v / 100; });
+}
+function tripBill(t) {
+  const L = tripChanges(t); if (!L.length) return '';
+  const cur = L.reduce((a, x) => a + numv(x.h.cost), 0);
+  if (S.billFor !== t.id) return `<h2>Сметка от сервиза</h2><div class="card"><div class="kv"><span>Записано за ${L.length} ${L.length === 1 ? 'смяна' : 'смени'}</span><b>${eur(cur)}</b></div>
+    <button class="btn sec" style="margin-top:8px" onclick="S.billFor='${t.id}';S.billTot='';render()">🧾 Въведи общата сума по фактурата</button></div>`;
+  const tot = numv(S.billTot), parts = tot ? splitBill(L, tot) : L.map(x => numv(x.h.cost));
+  return `<h2>Сметка от сервиза</h2><div class="card"><label for="b_tot">Обща сума по фактурата</label>
+    <div class="bsumin"><input id="b_tot" inputmode="decimal" value="${esc(S.billTot || '')}" placeholder="${cur ? cur.toFixed(2) : '0'}" oninput="S.billTot=this.value;$('bsplit').innerHTML=billSplitHtml('${t.id}')"><span>€</span></div>
+    <div class="mut" style="margin:6px 0">Разпределя се по колите според уговорените цени. Можеш да поправиш всяка кола поотделно.</div>
+    <div id="bsplit">${billSplitHtml(t.id)}</div>
+    <div class="row"><button class="btn sec" onclick="S.billFor='';render()">Откажи</button><button class="btn" onclick="saveTripBill('${t.id}')">Запази сумите</button></div></div>`;
+}
+function billSplitHtml(tid) {
+  const t = DB.trips.find(x => x.id === tid), L = tripChanges(t), tot = numv(S.billTot), parts = tot ? splitBill(L, tot) : L.map(x => numv(x.h.cost));
+  return L.map((x, i) => `<div class="prow"><div style="flex:1;min-width:0"><b>${esc(x.c.plate)}</b><div class="mut">${esc(x.c.model)} · беше ${eur(numv(x.h.cost))}</div></div><input class="bp" id="bs_${i}" inputmode="decimal" value="${parts[i] ? parts[i].toFixed(2) : ''}"><span class="bx">€</span></div>`).join('');
+}
+function saveTripBill(tid) {
+  const t = DB.trips.find(x => x.id === tid), L = tripChanges(t);
+  const items = L.map((x, i) => ({ id: x.h.id, cost: val('bs_' + i) }));
+  const sum = items.reduce((a, x) => a + numv(x.cost), 0), tot = numv(S.billTot);
+  if (tot && Math.abs(sum - tot) > 0.009) return toast('Сборът по колите е ' + eur(sum) + ', а фактурата е ' + eur(tot), 1);
+  saveCosts(items, 'Сумите по фактурата са записани ✔');
+}
 // очакван разход за сезонната смяна по уговорените цени
 function seasonStart() { const t = todayStr(), y = +t.slice(0, 4), m = +t.slice(5, 7);
   return TARGET === 'winter' ? (m >= 9 ? y : y - 1) + '-09-01' : y + '-03-01'; }
@@ -661,6 +708,7 @@ const V = {
       return `<div class="card"><div class="step"><div class="t" onclick="openCar('${c.id}')" style="cursor:pointer">${plateHtml(c.plate)} <span class="badge ${it.step === 3 ? 'b-ok' : it.step ? 'b-warn' : 'b-soft'}">${STEP_TXT[it.step]}</span>
         <div class="mut">${esc(c.model)} · ${esc(ts.size || c.size)} · ${esc(ts.brand || '—')}</div>${ts.rims ? '<span class="badge b-soft">🛞 на джанти</span>' : '<span class="badge b-warn">без джанти · монтаж</span>'}</div>${btn}</div>${dots(it.step)}</div>`;
     }).join('');
+    if (canEdit()) h += tripBill(t);
     return h;
   },
 
@@ -767,7 +815,7 @@ const V = {
     const hs = DB.history.filter(x => x.carId === c.id).sort((a, b) => b.date.localeCompare(a.date));
     const tot = hs.reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0);
     const yr = hs.filter(x => x.date >= YEAR + '-01-01').reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0);
-    h += `<h2>История · разходи ${eur(yr)} тази година · ${eur(tot)} общо</h2><div class="card">` + hs.map(x => `<div class="hist"><div class="d">${fmt(x.date)}</div><div style="flex:1">${esc(x.text)}${x.service ? ' · ' + esc(x.service) : ''}${x.km ? `<div class="mut">${Number(x.km).toLocaleString('bg-BG')} км</div>` : ''}${x.note ? `<div class="mut">${esc(x.note)}</div>` : ''}</div><div class="mut">${x.cost ? eur(x.cost) : ''}</div></div>`).join('') + '</div>';
+    h += `<h2>История · разходи ${eur(yr)} тази година · ${eur(tot)} общо</h2><div class="card">` + hs.map(x => `<div class="hist"><div class="d">${fmt(x.date)}</div><div style="flex:1">${esc(x.text)}${x.service ? ' · ' + esc(x.service) : ''}${x.km ? `<div class="mut">${Number(x.km).toLocaleString('bg-BG')} км</div>` : ''}${x.note ? `<div class="mut">${esc(x.note)}</div>` : ''}</div>${histCost(x)}</div>`).join('') + '</div>';
     return h;
   },
 
