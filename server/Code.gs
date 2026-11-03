@@ -50,7 +50,7 @@ const DIAMS = ['13', '14', '15', '16', '17', '18', '19', '20', '21', '22'];
 const LAT = { A: 'А', B: 'В', C: 'С', E: 'Е', H: 'Н', K: 'К', M: 'М', O: 'О', P: 'Р', T: 'Т', X: 'Х', Y: 'У' };
 
 let DB = null, TARGET = 'winter', ROAD_INFO = '', ROAD_DIAG = {};
-const SERVER_VERSION = '9';
+const SERVER_VERSION = '11';
 let RAW = null, RAW_DIRTY = false;   // копие на листовете в паметта на Google (кеш), за да не се чете таблицата при всяко действие
 const SHEETS = {};
 
@@ -444,6 +444,26 @@ const ACT = {
   setTripDriver(b) {
     const t = DB.trips.find(x => x.id === b.tripId); if (!t) throw new Error('Няма такъв рейс');
     t.driver = String(b.driver || ''); return true;
+  },
+  // бус, сервиз, дата и махане на коли, които още не са сменени
+  editTrip(b) {
+    const t = DB.trips.find(x => x.id === b.tripId); if (!t) throw new Error('Няма такъв рейс');
+    if (b.bus && DB.buses.indexOf(b.bus) >= 0) t.bus = b.bus;
+    if (b.service && DB.services.indexOf(b.service) >= 0) t.service = b.service;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(b.date || ''))) t.date = b.date;
+    const rem = b.remove || [];
+    if (rem.length) {
+      if (t.items.some(x => rem.indexOf(x.carId) >= 0 && x.step >= 2)) throw new Error('Сменена кола не може да се махне от рейса');
+      t.items = t.items.filter(x => rem.indexOf(x.carId) < 0);
+    }
+    if (!t.items.length) DB.trips = DB.trips.filter(x => x !== t);
+    return true;
+  },
+  deleteTrip(b) {
+    const t = DB.trips.find(x => x.id === b.tripId); if (!t) throw new Error('Няма такъв рейс');
+    if (t.items.some(x => x.step >= 2)) throw new Error('В рейса има сменени коли — не може да се изтрие');
+    DB.trips = DB.trips.filter(x => x !== t);
+    return true;
   },
   cycleTire(b) {
     const c = carById(b.carId), s = c && c.sets[b.k]; if (!s) throw new Error('Няма такъв комплект');
