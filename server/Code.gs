@@ -50,7 +50,7 @@ const DIAMS = ['13', '14', '15', '16', '17', '18', '19', '20', '21', '22'];
 const LAT = { A: 'А', B: 'В', C: 'С', E: 'Е', H: 'Н', K: 'К', M: 'М', O: 'О', P: 'Р', T: 'Т', X: 'Х', Y: 'У' };
 
 let DB = null, TARGET = 'winter', ROAD_INFO = '', ROAD_DIAG = {};
-const SERVER_VERSION = '11';
+const SERVER_VERSION = '12';
 let RAW = null, RAW_DIRTY = false;   // копие на листовете в паметта на Google (кеш), за да не се чете таблицата при всяко действие
 const SHEETS = {};
 
@@ -80,7 +80,8 @@ function token_() { return Utilities.getUuid().replace(/-/g, '').slice(0, 16); }
 const kinds = c => c.allSeason ? ['all'] : ['winter', 'summer'];
 const other = s => s === 'summer' ? 'winter' : 'summer';
 const carById = id => DB.cars.find(c => c.id === id);
-const tripOf = id => DB.trips.find(t => t.items.some(x => x.carId === id && x.step < 3));
+// стъпки на кола в рейс: 0 чака · 1 в буса · 2 оставена в сервиза · 3 взета (сменена) · 4 прибрана в склада
+const tripOf = id => DB.trips.find(t => t.items.some(x => x.carId === id && x.step < 4));
 const itemOf = id => { const t = tripOf(id); return t ? t.items.find(x => x.carId === id) : null; };
 const have = s => s ? s.tires.filter(t => t !== 'scrap').length : 0;
 const kmOf = (c, k) => { const s = c.sets[k]; if (!s) return 0; return (s.kmRun || 0) + (c.mounted === k ? Math.max(0, (c.odo || c.km) - c.km) : 0); };
@@ -284,6 +285,8 @@ function load_(fresh) {
     if (!t) { t = tmap[id] = { id, date: dstr_(r['Дата']), bus: String(r['Бус']), service: String(r['Сервиз']), driver: String(r['Шофьор'] || ''), items: [] }; D.trips.push(t); }
     t.items.push({ carId, step: numv(r['Стъпка']) });
   });
+  // до версия 12 стъпките бяха 0–3 (без „в сервиза“): 2 → 3, 3 → 4
+  if (String(cfg.STEPS_V || '') !== '2') { D.trips.forEach(t => t.items.forEach(it => { if (it.step >= 2) it.step++; })); D.migrated = true; }
   return D;
 }
 function carRow_(c, removed) {
@@ -302,7 +305,7 @@ function rowsAll_(D) {
   const plateOf = id => { const c = D.cars.find(x => x.id === id); return c ? c.plate : fmtPlate_(id); };
   const trips = [];
   const old = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);   // приключени рейсове по-стари от 90 дни не се пазят
-  D.trips.filter(t => t.items.length && !(t.items.every(x => x.step === 3) && t.date < old))
+  D.trips.filter(t => t.items.length && !(t.items.every(x => x.step === 4) && t.date < old))
     .forEach(t => t.items.forEach(it => trips.push({ 'ID': t.id, 'Дата': t.date, 'Бус': t.bus, 'Сервиз': t.service, 'Номер': plateOf(it.carId), 'Стъпка': it.step, 'Шофьор': t.driver || '' })));
   const out = {
     cars: D.cars.map(c => carRow_(c)).concat(D.removedRows),
@@ -344,6 +347,12 @@ function processRemoved_() {
     DB.removedRows.push(carRow_(c, todayStr()));
   });
   DB.removedNow = [];
+}
+// отбелязва в „Настройки“, че рейсовете са минали на новите стъпки
+function stepsDone_() {
+  const rows = read_('cfg').filter(r => String(r['Ключ']).trim() !== 'STEPS_V');
+  rows.push({ 'Ключ': 'STEPS_V', 'Стойност': 2 });
+  write_('cfg', rows);
 }
 function public_() {
   const D = DB;
@@ -402,9 +411,13 @@ const ACT = {
   advance(b) {
     const t = DB.trips.find(x => x.id === b.tripId); if (!t) throw new Error('Няма такъв рейс');
     const it = t.items.find(x => x.carId === b.carId); if (!it) throw new Error('Колата не е в рейса');
-    if (it.step === 1) throw new Error('За смяната попълни формата');
-    if (it.step < 3) it.step++;
-    if (it.step === 3) hist_(carById(it.carId), { type: 'store', text: SETN[other(TARGET)] + ' прибрани в склада' });
+    if (it.step >= 4) return true;
+    if (it.step === 2) {   // „Взех“: смяната се записва сама, с км от пътната книжка
+      const c = carById(it.carId);
+      if (c && !c.allSeason && c.mounted !== TARGET && c.sets[TARGET]) ACT.change({ carId: c.id, service: t.service, date: todayStr() });
+      it.step = 3;
+    } else it.step++;
+    if (it.step === 4) hist_(carById(it.carId), { type: 'store', text: SETN[other(TARGET)] + ' прибрани в склада' });
     return true;
   },
   change(b) {
@@ -426,7 +439,7 @@ const ACT = {
       const st = c.sets[put]; st.rotAt = st.kmRun || 0; st.tires = [st.tires[2], st.tires[3], st.tires[0], st.tires[1]];
       hist_(c, { date: b.date || todayStr(), type: 'rotate', text: 'Ротация ' + SETN[put].toLowerCase() + ' при монтажа', service: b.service || c.service });
     }
-    const it = itemOf(c.id); if (it && it.step < 2) it.step = 2;
+    const it = itemOf(c.id); if (it && it.step < 3) it.step = 3;
     return true;
   },
   newTrip(b) {
@@ -453,7 +466,7 @@ const ACT = {
     if (/^\d{4}-\d{2}-\d{2}$/.test(String(b.date || ''))) t.date = b.date;
     const rem = b.remove || [];
     if (rem.length) {
-      if (t.items.some(x => rem.indexOf(x.carId) >= 0 && x.step >= 2)) throw new Error('Сменена кола не може да се махне от рейса');
+      if (t.items.some(x => rem.indexOf(x.carId) >= 0 && x.step >= 3)) throw new Error('Сменена кола не може да се махне от рейса');
       t.items = t.items.filter(x => rem.indexOf(x.carId) < 0);
     }
     if (!t.items.length) DB.trips = DB.trips.filter(x => x !== t);
@@ -461,7 +474,7 @@ const ACT = {
   },
   deleteTrip(b) {
     const t = DB.trips.find(x => x.id === b.tripId); if (!t) throw new Error('Няма такъв рейс');
-    if (t.items.some(x => x.step >= 2)) throw new Error('В рейса има сменени коли — не може да се изтрие');
+    if (t.items.some(x => x.step >= 3)) throw new Error('В рейса има сменени коли — не може да се изтрие');
     DB.trips = DB.trips.filter(x => x !== t);
     return true;
   },
@@ -696,7 +709,7 @@ function handle_(body) {
     RAW = cacheLoad_() || {}; RAW_DIRTY = false;   // наново след заключването, за да не се ползват стари данни
     DB = load_(a === 'refresh');
     // ако някоя кола е изчезнала от пътната книжка, листовете се записват изцяло (гумите ѝ минават в свободни)
-    const before = DB.removedNow.length ? {} : rowsAll_(DB);
+    const before = DB.removedNow.length || DB.migrated ? {} : rowsAll_(DB);
     processRemoved_();
     let res = null;
     if (ACT[a]) {
@@ -705,6 +718,7 @@ function handle_(body) {
     }
     const after = rowsAll_(DB);
     Object.keys(after).forEach(k => { if (after[k] !== before[k]) write_(k, JSON.parse(after[k])); });
+    if (DB.migrated) stepsDone_();
     if (RAW && RAW_DIRTY) cacheSave_();
     return { ok: true, res, db: public_(), me: { name: me.name, role: me.role, username: me.username, hasPass: !!me.hash } };
   } catch (err) {
@@ -723,10 +737,11 @@ function warmUp() {
   try {
     RAW = cacheLoad_() || {}; RAW_DIRTY = false;
     DB = load_(true);
-    const before = DB.removedNow.length ? {} : rowsAll_(DB);
+    const before = DB.removedNow.length || DB.migrated ? {} : rowsAll_(DB);
     processRemoved_();
     const after = rowsAll_(DB);
     Object.keys(after).forEach(k => { if (after[k] !== before[k]) write_(k, JSON.parse(after[k])); });
+    if (DB.migrated) stepsDone_();
     cacheSave_();
   } catch (e) {
     console.log('Автоматично обновяване: ' + (e && e.message));
