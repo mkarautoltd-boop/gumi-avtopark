@@ -26,7 +26,7 @@ const SH = {
   cars: ['Коли', ['Номер', 'Ръчна', 'Модел', 'Шофьор', 'Размер', 'Сервиз', 'Всесезонни', 'На колата', 'Км при смяна', 'Км ръчно', 'Премахната', 'Вид кола']],
   sets: ['Комплекти', ['Номер', 'Вид', 'Размер', 'Марка', 'DOT', 'Протектор', 'Джанти', 'Изминати км', 'Ротация при км', 'ПЛ', 'ПД', 'ЗЛ', 'ЗД']],
   free: ['Свободни', ['ID', 'Вид', 'Размер', 'Марка', 'DOT', 'Протектор', 'Джанти', 'Изминати км', 'Ротация при км', 'Гуми', 'От кола', 'Дата', 'Бележка']],
-  trips: ['Рейсове', ['ID', 'Дата', 'Бус', 'Сервиз', 'Номер', 'Стъпка']],
+  trips: ['Рейсове', ['ID', 'Дата', 'Бус', 'Сервиз', 'Номер', 'Стъпка', 'Шофьор']],
   hist: ['История', ['ID', 'Дата', 'Номер', 'Вид', 'Текст', 'Сервиз', 'Км', 'Сума', 'Бележка']],
   svc: ['Сервизи', ['Сервиз', 'Монтаж и демонтаж €', 'Смяна с джанти €']],
   svcp: ['Цени по размер', ['Сервиз', 'Вид кола', 'Диаметър', 'Монтаж и демонтаж €', 'Смяна с джанти €']],
@@ -50,7 +50,7 @@ const DIAMS = ['13', '14', '15', '16', '17', '18', '19', '20', '21', '22'];
 const LAT = { A: 'А', B: 'В', C: 'С', E: 'Е', H: 'Н', K: 'К', M: 'М', O: 'О', P: 'Р', T: 'Т', X: 'Х', Y: 'У' };
 
 let DB = null, TARGET = 'winter', ROAD_INFO = '', ROAD_DIAG = {};
-const SERVER_VERSION = '8';
+const SERVER_VERSION = '9';
 let RAW = null, RAW_DIRTY = false;   // копие на листовете в паметта на Google (кеш), за да не се чете таблицата при всяко действие
 const SHEETS = {};
 
@@ -281,7 +281,7 @@ function load_(fresh) {
     const id = String(r['ID']), carId = normPlate_(r['Номер']);
     if (!ids[carId]) return;
     let t = tmap[id];
-    if (!t) { t = tmap[id] = { id, date: dstr_(r['Дата']), bus: String(r['Бус']), service: String(r['Сервиз']), items: [] }; D.trips.push(t); }
+    if (!t) { t = tmap[id] = { id, date: dstr_(r['Дата']), bus: String(r['Бус']), service: String(r['Сервиз']), driver: String(r['Шофьор'] || ''), items: [] }; D.trips.push(t); }
     t.items.push({ carId, step: numv(r['Стъпка']) });
   });
   return D;
@@ -303,7 +303,7 @@ function rowsAll_(D) {
   const trips = [];
   const old = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);   // приключени рейсове по-стари от 90 дни не се пазят
   D.trips.filter(t => t.items.length && !(t.items.every(x => x.step === 3) && t.date < old))
-    .forEach(t => t.items.forEach(it => trips.push({ 'ID': t.id, 'Дата': t.date, 'Бус': t.bus, 'Сервиз': t.service, 'Номер': plateOf(it.carId), 'Стъпка': it.step })));
+    .forEach(t => t.items.forEach(it => trips.push({ 'ID': t.id, 'Дата': t.date, 'Бус': t.bus, 'Сервиз': t.service, 'Номер': plateOf(it.carId), 'Стъпка': it.step, 'Шофьор': t.driver || '' })));
   const out = {
     cars: D.cars.map(c => carRow_(c)).concat(D.removedRows),
     sets,
@@ -347,7 +347,8 @@ function processRemoved_() {
 }
 function public_() {
   const D = DB;
-  return { cars: D.cars, history: D.history, trips: D.trips, services: D.services, buses: D.buses, extras: D.extras, prices: D.prices, free: D.free, target: D.target, rotKm: D.rotKm, today: todayStr(), version: SERVER_VERSION, road: ROAD_DIAG };
+  return { cars: D.cars, history: D.history, trips: D.trips, services: D.services, buses: D.buses, extras: D.extras, prices: D.prices, free: D.free, target: D.target, rotKm: D.rotKm, today: todayStr(), version: SERVER_VERSION, road: ROAD_DIAG,
+    drivers: usersList_().filter(u => u.role === 'driver' && u.active && u.username).map(u => ({ username: u.username, name: u.name })) };
 }
 
 /* ---------- потребители и вход ---------- */
@@ -430,7 +431,7 @@ const ACT = {
   },
   newTrip(b) {
     if (!b.cars || !b.cars.length) throw new Error('Избери поне една кола');
-    const t = { id: nid(), date: b.date || todayStr(), bus: b.bus, service: b.service, items: b.cars.filter(id => carById(id)).map(id => ({ carId: id, step: 0 })) };
+    const t = { id: nid(), date: b.date || todayStr(), bus: b.bus, service: b.service, driver: String(b.driver || ''), items: b.cars.filter(id => carById(id)).map(id => ({ carId: id, step: 0 })) };
     DB.trips.push(t); return t.id;
   },
   addToTrip(b) {
@@ -439,6 +440,10 @@ const ACT = {
     if (!ids.length) throw new Error('Избери поне една кола');
     ids.forEach(id => t.items.push({ carId: id, step: 0 }));
     return ids.length;
+  },
+  setTripDriver(b) {
+    const t = DB.trips.find(x => x.id === b.tripId); if (!t) throw new Error('Няма такъв рейс');
+    t.driver = String(b.driver || ''); return true;
   },
   cycleTire(b) {
     const c = carById(b.carId), s = c && c.sets[b.k]; if (!s) throw new Error('Няма такъв комплект');
