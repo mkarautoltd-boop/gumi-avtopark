@@ -387,6 +387,9 @@ const tripDone = t => t.items.every(x => x.step === 3);
 const myTrips = () => USER.role === 'driver' ? DB.trips.filter(t => !t.driver || t.driver === USER.username) : DB.trips;
 const driverName = u => { const d = (DB.drivers || []).find(x => x.username === u); return d ? d.name : u; };
 const lastDriver = bus => { const t = DB.trips.filter(x => x.bus === bus && x.driver).sort((a, b) => a.date < b.date ? 1 : -1)[0]; return t ? t.driver : ''; };
+// защо списъкът с шофьори е празен: стар сървър или няма потребители с права „Шофьор на бус“
+const driversWhy = () => (+DB.version || 0) < 9 ? `⚠️ Сървърът е версия ${esc(DB.version || '?')} — сложи новия код (версия 9) в Apps Script и направи New version → Deploy.`
+  : (DB.drivers || []).length ? '' : 'Няма потребители с права „Шофьор на бус“. Провери правата им в Справка → ⚙️ Настройки → Потребители.';
 const driverOpts = cur => `<option value="">— без шофьор —</option>` + (DB.drivers || []).map(d => `<option value="${esc(d.username)}" ${d.username === cur ? 'selected' : ''}>${esc(d.name)}</option>`).join('')
   + (cur && !(DB.drivers || []).some(d => d.username === cur) ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : '');
 function treadState(set, kind) {
@@ -690,7 +693,7 @@ const V = {
   trip() {
     const t = DB.trips.find(x => x.id === S.trip); if (!t) return go('trips');
     header(`${t.bus} → ${t.service}`, 'trips');
-    let h = `<div class="card"><div class="kv"><span>Дата</span><b>${fmt(t.date)}</b></div><div class="kv"><span>Шофьор</span>${canEdit() ? `<select class="kvsel" aria-label="Шофьор" onchange="setTripDriver('${t.id}',this.value)">${driverOpts(t.driver)}</select>` : `<b>${esc(t.driver ? driverName(t.driver) : '—')}</b>`}</div><div class="kv"><span>Карат се</span><b>${SETN[TARGET]} гуми</b></div><div class="kv"><span>Връщат се в склада</span><b>${SETN[other(TARGET)]} гуми</b></div><div class="kv"><span>Прогрес</span><b>${tripSummary(t)}</b></div></div>
+    let h = `<div class="card"><div class="kv"><span>Дата</span><b>${fmt(t.date)}</b></div><div class="kv"><span>Шофьор</span>${canEdit() ? `<select class="kvsel" aria-label="Шофьор" onchange="setTripDriver('${t.id}',this.value)">${driverOpts(t.driver)}</select>` : `<b>${esc(t.driver ? driverName(t.driver) : '—')}</b>`}</div>${canEdit() && driversWhy() ? `<div class="calc" style="background:var(--warnbg);color:var(--warntx);margin:6px 0">${driversWhy()}</div>` : ''}<div class="kv"><span>Карат се</span><b>${SETN[TARGET]} гуми</b></div><div class="kv"><span>Връщат се в склада</span><b>${SETN[other(TARGET)]} гуми</b></div><div class="kv"><span>Прогрес</span><b>${tripSummary(t)}</b></div></div>
       ${canEdit() && !tripDone(t) ? `<div class="row"><button class="btn sec" style="margin:0 0 10px" onclick="go('tripAdd',{picked:[]})">➕ Добави коли</button><button class="btn sec" style="margin:0 0 10px" onclick="openMsg('${t.id}')">💬 Съобщение за Viber</button></div>` : ''}
       <div class="mut" style="margin:4px 0 10px">Натисни при всяка стъпка: натоварих → сменени (попълва км и протектор) → прибрах в склада.</div>`;
     h += t.items.map(it => {
@@ -712,7 +715,7 @@ const V = {
       <div><label for="f_srv">Сервиз</label><select id="f_srv">${opts(DB.services)}</select></div></div>
       <div class="row"><div><label for="f_drv">Шофьор</label><select id="f_drv">${driverOpts(lastDriver(DB.buses[0]))}</select></div>
       <div><label for="f_date">Дата</label><input type="date" id="f_date" value="${dayShift(1)}"></div></div>
-      ${(DB.drivers || []).length ? '' : `<div class="mut" style="margin:6px 0 0">Няма шофьори на бус. Добави ги от Справка → ⚙️ Настройки → Потребители.</div>`}
+      ${driversWhy() ? `<div class="calc" style="background:var(--warnbg);color:var(--warntx);margin:6px 0 0">${driversWhy()}</div>` : ''}
       ${noSet ? `<div class="calc" style="background:var(--badbg)">${noSet} коли нямат ${SETN[TARGET].toLowerCase()} гуми и не са в списъка. Добави им комплект от картата на колата.</div>` : ''}
       <h2>Коли за рейса (${S.picked.length} избрани)</h2><div class="card">`;
     h += pool.map(c => `<label class="chk"><input type="checkbox" ${S.picked.includes(c.id) ? 'checked' : ''} onchange="togglePick('${c.id}')"><span style="flex:1"><b class="plate">${esc(c.plate)}</b> <span class="mut">${esc(c.model)} · ${esc(c.service)} · ${c.sets[TARGET].rims ? 'джанти' : 'без джанти'}</span></span></label>`).join('') || '<div class="mut">Всички коли са сменени или вече са в рейс.</div>';
