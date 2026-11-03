@@ -388,7 +388,7 @@ const myTrips = () => USER.role === 'driver' ? DB.trips.filter(t => !t.driver ||
 const driverName = u => { const d = (DB.drivers || []).find(x => x.username === u); return d ? d.name : u; };
 const lastDriver = bus => { const t = DB.trips.filter(x => x.bus === bus && x.driver).sort((a, b) => a.date < b.date ? 1 : -1)[0]; return t ? t.driver : ''; };
 // защо списъкът с шофьори е празен: стар сървър или няма потребители с права „Шофьор на бус“
-const driversWhy = () => (+DB.version || 0) < 9 ? `⚠️ Сървърът е версия ${esc(DB.version || '?')} — сложи новия код (версия 9) в Apps Script и направи New version → Deploy.`
+const driversWhy = () => !DB.drivers ? `⚠️ Сървърът (версия ${esc(DB.version || '?')}) не праща списъка с шофьори — в Apps Script е код без шофьорите. Сложи последния код и направи New version → Deploy.`
   : (DB.drivers || []).length ? '' : 'Няма потребители с права „Шофьор на бус“. Провери правата им в Справка → ⚙️ Настройки → Потребители.';
 const driverOpts = cur => `<option value="">— без шофьор —</option>` + (DB.drivers || []).map(d => `<option value="${esc(d.username)}" ${d.username === cur ? 'selected' : ''}>${esc(d.name)}</option>`).join('')
   + (cur && !(DB.drivers || []).some(d => d.username === cur) ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : '');
@@ -1181,7 +1181,7 @@ function togglePick(id) {
   const bus = val('f_bus'), srv = val('f_srv'), dt = val('f_date'), drv = val('f_drv'); render(); $('f_bus').value = bus; $('f_srv').value = srv; $('f_date').value = dt; $('f_drv').value = drv;
 }
 async function setTripDriver(tripId, driver) {
-  if ((+DB.version || 0) < 9) { toast('Сървърът е стара версия — сложи новия код в Apps Script (версия 9)', 1); return render(); }
+  if (!DB.drivers) { toast('Сървърът не поддържа шофьори — сложи последния код в Apps Script', 1); return render(); }
   try { await api('setTripDriver', { tripId, driver }); toast(driver ? 'Шофьор: ' + driverName(driver) + ' ✔' : 'Рейсът е без шофьор'); render(); } catch (e) { toast(e.message, 1); render(); }
 }
 function saveTripAdd() {
