@@ -646,12 +646,12 @@ function carSelect(onlyWaiting) {
     list.map(c => `<option value="${c.id}" ${S.sel === c.id ? 'selected' : ''}>${esc(c.plate)} · ${esc(c.model)}</option>`).join('')}</select>`;
 }
 const opts = (arr, cur) => arr.map(x => `<option ${x === cur ? 'selected' : ''}>${esc(x)}</option>`).join('');
-const STEP_TXT = ['Чака', 'В буса', 'В сервиза', 'Взети', 'Готово'];
+const STEP_TXT = ['Чака', 'В буса', 'В сервиза', 'Сменени', 'Готово'];
 const STEP_BTN = ['Натоварих', 'Оставих в сервиза', 'Взех', 'Прибрах'];
 function dots(step) { return `<div class="dots">${[1, 2, 3, 4].map(k => `<i class="${step >= k ? (step === 4 ? 'fin' : 'on') : ''}"></i>`).join('')}</div>`; }
 function tripSummary(t) {
   const n = t.items.length, s = k => t.items.filter(x => x.step >= k).length;
-  return `натоварени ${s(1)} · в сервиза ${s(2)} · взети ${s(3)} · прибрани ${s(4)} от ${n}`;
+  return `натоварени ${s(1)} · в сервиза ${s(2)} · сменени ${s(3)} · прибрани ${s(4)} от ${n}`;
 }
 
 const V = {
@@ -1065,7 +1065,7 @@ function tripCard(t) {
   const s = k => t.items.filter(x => x.step >= k).length;
   return `<button class="szc" style="--acc:${tripDone(t) ? 'var(--ok)' : 'var(--teal)'}" onclick="go('trip',{trip:'${t.id}'})"><span class="sz">🚚 ${esc(t.bus)}</span><span class="mut">→ ${esc(t.service)} · ${fmt(t.date)}</span>${t.driver ? `<span class="mut">👤 ${esc(driverName(t.driver))}</span>` : ''}
     <span class="n">${st}<small>/ ${n} готови</small></span>
-    <span class="mut">в буса ${s(1)} · в сервиза ${s(2)} · взети ${s(3)}</span>${(() => { const nr = t.items.filter(x => { const c = carById(x.carId); return c && c.sets[TARGET] && !c.sets[TARGET].rims; }).length; return nr ? `<span class="mut">${nr} без джанти (монтаж)</span>` : ''; })()}${b}</button>`;
+    <span class="mut">в буса ${s(1)} · в сервиза ${s(2)} · сменени ${s(3)}</span>${(() => { const nr = t.items.filter(x => { const c = carById(x.carId); return c && c.sets[TARGET] && !c.sets[TARGET].rims; }).length; return nr ? `<span class="mut">${nr} без джанти (монтаж)</span>` : ''; })()}${b}</button>`;
 }
 const tripGrid = L => `<div class="szgrid">${L.map(tripCard).join('')}</div>`;
 
@@ -1151,7 +1151,7 @@ async function refreshRoad() { try { await api('refresh'); toast('Колите �
 // стъпките в рейса се отбелязват веднага на екрана, а към сървъра отиват една по една отзад
 let ADV_Q = Promise.resolve();
 const ADV_PEND = [];
-const ADV_OK = ['', 'Натоварено ✔', 'Оставено в сервиза ✔', 'Взети — смяната е записана ✔', 'Прибрано в склада ✔'];
+const ADV_OK = ['', 'Натоварено ✔', 'Оставено в сервиза ✔', 'Сменени — взети от сервиза ✔', 'Прибрано в склада ✔'];
 function advPend() {
   ADV_PEND.forEach(p => {
     const t = DB.trips.find(x => x.id === p.tripId), it = t && t.items.find(x => x.carId === p.carId);
