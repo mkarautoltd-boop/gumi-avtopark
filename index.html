@@ -379,11 +379,11 @@ let DB = null;   // идва от сървъра
 
 /* ---------- Логика (в истинското приложение е в Apps Script) ---------- */
 const carById = id => DB.cars.find(c => c.id === id);
-// стъпки на кола в рейс: 0 чака · 1 в буса · 2 оставена в сервиза · 3 взета (сменена) · 4 прибрана в склада
-const tripOf = id => DB.trips.find(t => t.items.some(x => x.carId === id && x.step < 4));
+// стъпки на кола в рейс: 0 чака · 1 в буса · 2 в сервиза · 3 сменена · 4 старите гуми взети · 5 върнати в склада
+const tripOf = id => DB.trips.find(t => t.items.some(x => x.carId === id && x.step < 5));
 const itemOf = id => { const t = tripOf(id); return t ? t.items.find(x => x.carId === id) : null; };
 const other = s => s === 'summer' ? 'winter' : 'summer';
-const tripDone = t => t.items.every(x => x.step === 4);
+const tripDone = t => t.items.every(x => x.step === 5);
 // шофьорът на бус вижда само своите рейсове (и тези без шофьор)
 const myTrips = () => USER.role === 'driver' ? DB.trips.filter(t => !t.driver || t.driver === USER.username) : DB.trips;
 const driverName = u => { const d = (DB.drivers || []).find(x => x.username === u); return d ? d.name : u; };
@@ -616,10 +616,10 @@ function header(title, back) {
   $('hdr').innerHTML = h;
 }
 
-const stepBadge = st => st === 3 ? `<span class="badge b-warn">${SETN[other(TARGET)]} за склада</span>` : `<span class="badge b-warn">${STEP_TXT[st]}</span>`;
+const stepBadge = st => st === 4 ? `<span class="badge b-warn">${SETN[other(TARGET)]} за склада</span>` : `<span class="badge b-warn">${STEP_TXT[st]}</span>`;
 function carBadges(c) {
   const it = itemOf(c.id); let b = '';
-  if (it && it.step && it.step < 4) b += stepBadge(it.step);
+  if (it && it.step && it.step < 5) b += stepBadge(it.step);
   else b += (c.allSeason ? '<span class="badge b-soft">🌦️ Всесезонни</span>' : c.mounted === 'winter' ? '<span class="badge b-win">На зимни</span>' : '<span class="badge b-sum">На летни</span>');
   issues(c).forEach(x => b += `<span class="badge b-${x.lvl}">${x.txt}</span>`);
   b += rotBadge(c);
@@ -629,7 +629,7 @@ const EU_STARS = '<svg viewBox="0 0 20 20" aria-hidden="true">' + Array.from({ l
 const plateHtml = (p, big) => `<span class="plt${big ? ' big' : ''}" role="img" aria-label="Номер ${esc(p)}"><i>${EU_STARS}<b>BG</b></i><span>${esc(p)}</span></span>`;
 function carTile(c, sub, extraBadge) {
   const it = itemOf(c.id);
-  const st = it && it.step && it.step < 4 ? stepBadge(it.step)
+  const st = it && it.step && it.step < 5 ? stepBadge(it.step)
     : (c.allSeason ? '<span class="badge b-soft">🌦️ Всесезонни</span>' : c.mounted === 'winter' ? '<span class="badge b-win">На зимни</span>' : '<span class="badge b-sum">На летни</span>');
   const iss = extraBadge != null ? extraBadge : issues(c).map(x => `<span class="badge b-${x.lvl}">${x.txt}</span>`).join('') + rotBadge(c);
   const acc = issues(c).some(x => x.lvl === 'bad') ? 'var(--bad)' : c.allSeason ? 'var(--teal)' : c.mounted === 'winter' ? 'var(--win)' : 'var(--org)';
@@ -646,12 +646,12 @@ function carSelect(onlyWaiting) {
     list.map(c => `<option value="${c.id}" ${S.sel === c.id ? 'selected' : ''}>${esc(c.plate)} · ${esc(c.model)}</option>`).join('')}</select>`;
 }
 const opts = (arr, cur) => arr.map(x => `<option ${x === cur ? 'selected' : ''}>${esc(x)}</option>`).join('');
-const STEP_TXT = ['Чака', 'В буса', 'В сервиза', 'Сменени', 'В склада'];
-const STEP_BTN = ['Натоварих', 'Оставих в сервиза', 'Взех', 'Прибрах'];
-function dots(step) { return `<div class="dots">${[1, 2, 3, 4].map(k => `<i class="${step >= k ? (step === 4 ? 'fin' : 'on') : ''}"></i>`).join('')}</div>`; }
+const STEP_TXT = ['Чака', 'В буса', 'В сервиза', 'Сменени', 'Взети', 'В склада'];
+const STEP_BTN = ['Натоварих', 'В сервиза', 'Сменени', 'Взех', 'Върнах'];
+function dots(step) { return `<div class="dots">${[1, 2, 3, 4, 5].map(k => `<i class="${step >= k ? (step === 5 ? 'fin' : 'on') : ''}"></i>`).join('')}</div>`; }
 function tripSummary(t) {
   const n = t.items.length, s = k => t.items.filter(x => x.step >= k).length;
-  return `натоварени ${s(1)} · в сервиза ${s(2)} · сменени ${s(3)} · прибрани ${s(4)} от ${n}`;
+  return `натоварени ${s(1)} · в сервиза ${s(2)} · сменени ${s(3)} · взети ${s(4)} · върнати ${s(5)} от ${n}`;
 }
 
 const V = {
@@ -697,13 +697,13 @@ const V = {
     header(`${t.bus} → ${t.service}`, 'trips');
     let h = `<div class="card"><div class="kv"><span>Дата</span><b>${fmt(t.date)}</b></div><div class="kv"><span>Шофьор</span>${canEdit() ? `<select class="kvsel" aria-label="Шофьор" onchange="setTripDriver('${t.id}',this.value)">${driverOpts(t.driver)}</select>` : `<b>${esc(t.driver ? driverName(t.driver) : '—')}</b>`}</div>${canEdit() && driversWhy() ? `<div class="calc" style="background:var(--warnbg);color:var(--warntx);margin:6px 0">${driversWhy()}</div>` : ''}<div class="kv"><span>Карат се</span><b>${SETN[TARGET]} гуми</b></div><div class="kv"><span>Връщат се в склада</span><b>${SETN[other(TARGET)]} гуми</b></div><div class="kv"><span>Прогрес</span><b>${tripSummary(t)}</b></div></div>
       ${canEdit() && !tripDone(t) ? `<div class="row"><button class="btn sec" style="margin:0 0 10px" onclick="go('tripAdd',{picked:[]})">➕ Добави коли</button><button class="btn sec" style="margin:0 0 10px" onclick="go('tripEdit',{rem:[],confirmDel:''})">✏️ Редактирай</button></div><button class="btn sec" style="margin:0 0 10px" onclick="openMsg('${t.id}')">💬 Съобщение за Viber</button>` : ''}
-      ${(+DB.version || 0) < 12 ? '<div class="calc" style="background:var(--badbg)">⚠️ Сървърът е стара версия — сложи новия код в Apps Script (версия 12), иначе стъпките няма да съвпадат.</div>' : ''}
-      <div class="mut" style="margin:4px 0 10px">Натисни при всяка стъпка: натоварих → оставих в сервиза → взех (смяната се записва сама) → прибрах в склада.</div>`;
+      ${(+DB.version || 0) < 13 ? '<div class="calc" style="background:var(--badbg)">⚠️ Сървърът е стара версия — сложи новия код в Apps Script (версия 13), иначе стъпките няма да съвпадат.</div>' : ''}
+      <div class="mut" style="margin:4px 0 10px">Натисни при всяка стъпка: натоварих → в сервиза → сменени (смяната се записва сама) → взех старите гуми → върнах в склада.</div>`;
     h += t.items.map(it => {
       const c = carById(it.carId), ts = c.sets[TARGET] || {};
-      const btn = it.step >= 4 ? `<button class="done" disabled>✔ В склада</button>`
+      const btn = it.step >= 5 ? `<button class="done" disabled>✔ В склада</button>`
         : `<button onclick="advance('${t.id}','${c.id}')">${STEP_BTN[it.step]}</button>`;
-      return `<div class="card"><div class="step"><div class="t" onclick="openCar('${c.id}')" style="cursor:pointer">${plateHtml(c.plate)} <span class="badge ${it.step === 4 ? 'b-ok' : it.step ? 'b-warn' : 'b-soft'}">${STEP_TXT[it.step]}</span>
+      return `<div class="card"><div class="step"><div class="t" onclick="openCar('${c.id}')" style="cursor:pointer">${plateHtml(c.plate)} <span class="badge ${it.step === 5 ? 'b-ok' : it.step ? 'b-warn' : 'b-soft'}">${STEP_TXT[it.step]}</span>
         <div class="mut">${esc(c.model)} · ${esc(ts.size || c.size)} · ${esc(ts.brand || '—')}</div>${ts.rims ? '<span class="badge b-soft">🛞 на джанти</span>' : '<span class="badge b-warn">без джанти · монтаж</span>'}</div>${btn}</div>${dots(it.step)}</div>`;
     }).join('');
     return h;
@@ -803,7 +803,8 @@ const V = {
       if (k === c.mounted) return '<span class="badge b-ok">На колата</span>';
       if (it && k === TARGET && it.step === 1) return `<span class="badge b-warn">В ${esc(t.bus)}</span>`;
       if (it && k === TARGET && it.step === 2) return `<span class="badge b-warn">В ${esc(t.service)}</span>`;
-      if (it && k !== TARGET && it.step === 3) return `<span class="badge b-warn">В ${esc(t.bus)}</span>`;
+      if (it && k !== TARGET && it.step === 3) return `<span class="badge b-warn">В ${esc(t.service)}</span>`;
+      if (it && k !== TARGET && it.step === 4) return `<span class="badge b-warn">В ${esc(t.bus)}</span>`;
       return '<span class="badge b-soft">В склада</span>';
     };
     const setCard = k => {
@@ -852,7 +853,7 @@ const V = {
       if (!c.sets[k] || c.mounted === k) return false;
       const it = itemOf(c.id);
       if (it && k === TARGET && it.step >= 1) return false;
-      if (it && k !== TARGET && it.step === 3) return false;
+      if (it && k !== TARGET && (it.step === 3 || it.step === 4)) return false;
       return true;
     });
     const w = inStore('winter'), s = inStore('summer'), fr = DB.free;
@@ -1060,7 +1061,7 @@ const V = {
 };
 
 function tripCard(t) {
-  const n = t.items.length, st = t.items.filter(x => x.step === 4).length;
+  const n = t.items.length, st = t.items.filter(x => x.step === 5).length;
   const b = tripDone(t) ? '<span class="badge b-ok">Приключен</span>' : t.items.some(x => x.step) ? '<span class="badge b-warn">В движение</span>' : '<span class="badge b-soft">Чака</span>';
   const s = k => t.items.filter(x => x.step >= k).length;
   return `<button class="szc" style="--acc:${tripDone(t) ? 'var(--ok)' : 'var(--teal)'}" onclick="go('trip',{trip:'${t.id}'})"><span class="sz">🚚 ${esc(t.bus)}</span><span class="mut">→ ${esc(t.service)} · ${fmt(t.date)}</span>${t.driver ? `<span class="mut">👤 ${esc(driverName(t.driver))}</span>` : ''}
@@ -1151,7 +1152,7 @@ async function refreshRoad() { try { await api('refresh'); toast('Колите �
 // стъпките в рейса се отбелязват веднага на екрана, а към сървъра отиват една по една отзад
 let ADV_Q = Promise.resolve();
 const ADV_PEND = [];
-const ADV_OK = ['', 'Натоварено ✔', 'Оставено в сервиза ✔', 'Сменени — взети от сервиза ✔', 'Прибрано в склада ✔'];
+const ADV_OK = ['', 'Натоварено ✔', 'Оставено в сервиза ✔', 'Сменени — записано ✔', 'Старите гуми са взети ✔', 'Върнато в склада ✔'];
 function advPend() {
   ADV_PEND.forEach(p => {
     const t = DB.trips.find(x => x.id === p.tripId), it = t && t.items.find(x => x.carId === p.carId);
@@ -1164,7 +1165,7 @@ function advPend() {
 function advRender() { if (['home', 'trips', 'trip', 'cars', 'car', 'store'].includes(S.view)) render(); }
 function advance(tripId, carId) {
   const t = DB.trips.find(x => x.id === tripId), it = t && t.items.find(x => x.carId === carId);
-  if (!it || it.step >= 4) return;
+  if (!it || it.step >= 5) return;
   const p = { tripId, carId, step: it.step + 1 };
   ADV_PEND.push(p); advPend(); toast(ADV_OK[p.step]); advRender();
   ADV_Q = ADV_Q.then(async () => {

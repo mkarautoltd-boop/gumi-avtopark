@@ -50,7 +50,7 @@ const DIAMS = ['13', '14', '15', '16', '17', '18', '19', '20', '21', '22'];
 const LAT = { A: 'А', B: 'В', C: 'С', E: 'Е', H: 'Н', K: 'К', M: 'М', O: 'О', P: 'Р', T: 'Т', X: 'Х', Y: 'У' };
 
 let DB = null, TARGET = 'winter', ROAD_INFO = '', ROAD_DIAG = {};
-const SERVER_VERSION = '12';
+const SERVER_VERSION = '13';
 let RAW = null, RAW_DIRTY = false;   // копие на листовете в паметта на Google (кеш), за да не се чете таблицата при всяко действие
 const SHEETS = {};
 
@@ -80,8 +80,8 @@ function token_() { return Utilities.getUuid().replace(/-/g, '').slice(0, 16); }
 const kinds = c => c.allSeason ? ['all'] : ['winter', 'summer'];
 const other = s => s === 'summer' ? 'winter' : 'summer';
 const carById = id => DB.cars.find(c => c.id === id);
-// стъпки на кола в рейс: 0 чака · 1 в буса · 2 оставена в сервиза · 3 взета (сменена) · 4 прибрана в склада
-const tripOf = id => DB.trips.find(t => t.items.some(x => x.carId === id && x.step < 4));
+// стъпки на кола в рейс: 0 чака · 1 в буса · 2 в сервиза · 3 сменена · 4 старите гуми взети · 5 върнати в склада
+const tripOf = id => DB.trips.find(t => t.items.some(x => x.carId === id && x.step < 5));
 const itemOf = id => { const t = tripOf(id); return t ? t.items.find(x => x.carId === id) : null; };
 const have = s => s ? s.tires.filter(t => t !== 'scrap').length : 0;
 const kmOf = (c, k) => { const s = c.sets[k]; if (!s) return 0; return (s.kmRun || 0) + (c.mounted === k ? Math.max(0, (c.odo || c.km) - c.km) : 0); };
@@ -285,8 +285,13 @@ function load_(fresh) {
     if (!t) { t = tmap[id] = { id, date: dstr_(r['Дата']), bus: String(r['Бус']), service: String(r['Сервиз']), driver: String(r['Шофьор'] || ''), items: [] }; D.trips.push(t); }
     t.items.push({ carId, step: numv(r['Стъпка']) });
   });
-  // до версия 12 стъпките бяха 0–3 (без „в сервиза“): 2 → 3, 3 → 4
-  if (String(cfg.STEPS_V || '') !== '2') { D.trips.forEach(t => t.items.forEach(it => { if (it.step >= 2) it.step++; })); D.migrated = true; }
+  // стари стъпки: до версия 12 бяха 0–3 (без „в сервиза“), във версия 12 — 0–4 (без отделно „сменени“)
+  const sv = numv(cfg.STEPS_V);
+  if (sv < 3) {
+    const map = sv < 2 ? [0, 1, 3, 5] : [0, 1, 2, 4, 5];
+    D.trips.forEach(t => t.items.forEach(it => { it.step = map[it.step] != null ? map[it.step] : 5; }));
+    D.migrated = true;
+  }
   return D;
 }
 function carRow_(c, removed) {
@@ -305,7 +310,7 @@ function rowsAll_(D) {
   const plateOf = id => { const c = D.cars.find(x => x.id === id); return c ? c.plate : fmtPlate_(id); };
   const trips = [];
   const old = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);   // приключени рейсове по-стари от 90 дни не се пазят
-  D.trips.filter(t => t.items.length && !(t.items.every(x => x.step === 4) && t.date < old))
+  D.trips.filter(t => t.items.length && !(t.items.every(x => x.step === 5) && t.date < old))
     .forEach(t => t.items.forEach(it => trips.push({ 'ID': t.id, 'Дата': t.date, 'Бус': t.bus, 'Сервиз': t.service, 'Номер': plateOf(it.carId), 'Стъпка': it.step, 'Шофьор': t.driver || '' })));
   const out = {
     cars: D.cars.map(c => carRow_(c)).concat(D.removedRows),
@@ -351,7 +356,7 @@ function processRemoved_() {
 // отбелязва в „Настройки“, че рейсовете са минали на новите стъпки
 function stepsDone_() {
   const rows = read_('cfg').filter(r => String(r['Ключ']).trim() !== 'STEPS_V');
-  rows.push({ 'Ключ': 'STEPS_V', 'Стойност': 2 });
+  rows.push({ 'Ключ': 'STEPS_V', 'Стойност': 3 });
   write_('cfg', rows);
 }
 function public_() {
@@ -411,13 +416,13 @@ const ACT = {
   advance(b) {
     const t = DB.trips.find(x => x.id === b.tripId); if (!t) throw new Error('Няма такъв рейс');
     const it = t.items.find(x => x.carId === b.carId); if (!it) throw new Error('Колата не е в рейса');
-    if (it.step >= 4) return true;
-    if (it.step === 2) {   // „Взех“: смяната се записва сама, с км от пътната книжка
+    if (it.step >= 5) return true;
+    if (it.step === 2) {   // „Сменени“: смяната се записва сама, с км от пътната книжка
       const c = carById(it.carId);
       if (c && !c.allSeason && c.mounted !== TARGET && c.sets[TARGET]) ACT.change({ carId: c.id, service: t.service, date: todayStr() });
       it.step = 3;
     } else it.step++;
-    if (it.step === 4) hist_(carById(it.carId), { type: 'store', text: SETN[other(TARGET)] + ' прибрани в склада' });
+    if (it.step === 5) hist_(carById(it.carId), { type: 'store', text: SETN[other(TARGET)] + ' прибрани в склада' });
     return true;
   },
   change(b) {
