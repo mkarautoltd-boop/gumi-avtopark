@@ -646,7 +646,7 @@ function carSelect(onlyWaiting) {
     list.map(c => `<option value="${c.id}" ${S.sel === c.id ? 'selected' : ''}>${esc(c.plate)} · ${esc(c.model)}</option>`).join('')}</select>`;
 }
 const opts = (arr, cur) => arr.map(x => `<option ${x === cur ? 'selected' : ''}>${esc(x)}</option>`).join('');
-const STEP_TXT = ['Чака', 'В буса', 'В сервиза', 'Сменени', 'Готово'];
+const STEP_TXT = ['Чака', 'В буса', 'В сервиза', 'Сменени', 'В склада'];
 const STEP_BTN = ['Натоварих', 'Оставих в сервиза', 'Взех', 'Прибрах'];
 function dots(step) { return `<div class="dots">${[1, 2, 3, 4].map(k => `<i class="${step >= k ? (step === 4 ? 'fin' : 'on') : ''}"></i>`).join('')}</div>`; }
 function tripSummary(t) {
@@ -701,7 +701,7 @@ const V = {
       <div class="mut" style="margin:4px 0 10px">Натисни при всяка стъпка: натоварих → оставих в сервиза → взех (смяната се записва сама) → прибрах в склада.</div>`;
     h += t.items.map(it => {
       const c = carById(it.carId), ts = c.sets[TARGET] || {};
-      const btn = it.step >= 4 ? `<button class="done" disabled>✔ Готово</button>`
+      const btn = it.step >= 4 ? `<button class="done" disabled>✔ В склада</button>`
         : `<button onclick="advance('${t.id}','${c.id}')">${STEP_BTN[it.step]}</button>`;
       return `<div class="card"><div class="step"><div class="t" onclick="openCar('${c.id}')" style="cursor:pointer">${plateHtml(c.plate)} <span class="badge ${it.step === 4 ? 'b-ok' : it.step ? 'b-warn' : 'b-soft'}">${STEP_TXT[it.step]}</span>
         <div class="mut">${esc(c.model)} · ${esc(ts.size || c.size)} · ${esc(ts.brand || '—')}</div>${ts.rims ? '<span class="badge b-soft">🛞 на джанти</span>' : '<span class="badge b-warn">без джанти · монтаж</span>'}</div>${btn}</div>${dots(it.step)}</div>`;
