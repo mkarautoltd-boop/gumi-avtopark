@@ -911,10 +911,11 @@ const V = {
         <div class="oft" onclick="msgToggle('${t.id}')">🚚 <b>${esc(t.service)}</b> · ${esc(t.bus)}<div class="mut">${fmt(t.date)} · ${t.items.filter(x => x.step < 3).length} коли за смяна</div></div></div>`).join('')}</div>
       <div class="row"><div><label for="m_from">От дата</label><input type="date" id="m_from" value="${M.from}" onchange="S.msg.from=this.value;msgRefresh()"></div><div><label for="m_to">До дата</label><input type="date" id="m_to" value="${M.to}" onchange="S.msg.to=this.value;msgRefresh()"></div></div>
       ${msgServices().map(sv => { const C = M.contacts[sv] || {}, k = esc(sv).replace(/'/g, "\\'"); return `<div class="card" style="margin-top:10px"><b>${esc(sv)}</b>
-        <div class="row"><div><label>Телефон</label><input inputmode="tel" value="${esc(C.tel || '')}" placeholder="089…" oninput="msgContact('${k}','tel',this.value)"></div><div><label>Линк към картата</label><input value="${esc(C.map || '')}" placeholder="https://maps.app.goo.gl/…" oninput="msgContact('${k}','map',this.value)"></div></div></div>`; }).join('')}
-      <label for="m_txt">Съобщение</label><textarea id="m_txt" style="min-height:320px;font-size:14px" oninput="S.msg.edited=1">${esc(msgText())}</textarea>
-      <div class="row"><button class="btn sec" onclick="msgCopy()">📋 Копирай</button><button class="btn" onclick="msgShare()">📤 Сподели</button></div>
-      ${M.edited ? `<button class="plink" onclick="S.msg.edited=0;$('m_txt').value=msgText()">↺ Върни автоматичния текст</button>` : ''}`;
+        <div class="row"><div><label>Телефон</label><input inputmode="tel" value="${esc(C.tel || '')}" placeholder="089…" oninput="msgContact('${k}','tel',this.value)" onchange="msgContact('${k}','tel',this.value)"></div><div><label>Линк към картата</label><input value="${esc(C.map || '')}" placeholder="https://maps.app.goo.gl/…" oninput="msgContact('${k}','map',this.value)" onchange="msgContact('${k}','map',this.value)"></div></div></div>`; }).join('')}
+      <label for="m_txt">Съобщение</label>
+      <div id="m_reset" class="calc" style="background:var(--warnbg);color:var(--warntx)" ${M.edited ? '' : 'hidden'}>Текстът е поправян на ръка, затова телефонът, линкът и датите не влизат сами. <button class="plink" onclick="msgReset()">↺ Направи текста наново</button></div>
+      <textarea id="m_txt" style="min-height:320px;font-size:14px" oninput="S.msg.edited=1;$('m_reset').hidden=false">${esc(msgText())}</textarea>
+      <div class="row"><button class="btn sec" onclick="msgCopy()">📋 Копирай</button><button class="btn" onclick="msgShare()">📤 Сподели</button></div>`;
   },
 
   offer() {
@@ -1371,6 +1372,7 @@ function msgText() {
   return txt;
 }
 function msgRefresh() { if (!S.msg.edited && $('m_txt')) $('m_txt').value = msgText(); }
+function msgReset() { S.msg.edited = 0; $('m_txt').value = msgText(); $('m_reset').hidden = true; }
 function msgToggle(id) { const L = S.msg.ids, i = L.indexOf(id); if (i < 0) L.push(id); else L.splice(i, 1); S.msg.edited = 0; render(); }
 function msgContact(sv, f, v) { (S.msg.contacts[sv] = S.msg.contacts[sv] || {})[f] = v.trim(); try { localStorage.setItem('gumi_contacts', JSON.stringify(S.msg.contacts)); } catch (e) {} msgRefresh(); }
 async function msgCopy() {
