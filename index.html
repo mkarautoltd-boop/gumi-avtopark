@@ -96,6 +96,11 @@ textarea{min-height:70px}
 .tabbar i{position:absolute;top:5px;left:calc(50% + 6px);min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-style:normal;font-size:10.5px;font-weight:800;display:grid;place-items:center;padding:0 4px}
 .center{text-align:center;padding:40px 10px;color:var(--mut)}
 .tabs{display:flex;gap:6px;margin:10px 0}
+.crl{display:flex;flex-direction:column;gap:8px}
+.cr{display:grid;grid-template-columns:1fr auto;gap:4px 10px;background:var(--card);border:1px solid var(--cbd);border-radius:14px;padding:12px;cursor:pointer;text-align:left;color:var(--txt);font:inherit;width:100%}
+.cr .r{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.cr .w{grid-column:1/-1;font-size:13px;color:var(--mut)}
+@media(min-width:900px){.cr{grid-template-columns:140px 1.1fr 1.6fr 100px;align-items:center}.cr>span{grid-row:1}.cr .m{grid-column:2}.cr .s{grid-column:3}.cr .r{grid-column:4}}
 .tabs button{flex:1;border:0;border-radius:10px;padding:10px;background:var(--soft2);color:var(--txt);font-weight:600;font-size:13px;cursor:pointer}
 .tabs button.on{background:var(--navy);color:#fff}
 .step{display:flex;gap:10px;align-items:center}
@@ -1016,6 +1021,39 @@ const V = {
       <button class="btn" onclick="saveTires(${ex})">${ex ? 'Запиши гумите' : 'Запиши новите гуми'}</button>`;
   },
 
+  // всяка кола: какви гуми са на нея, кога и къде е последната смяна, разходи за годината
+  carReport() {
+    header('Справка по коли', 'report');
+    const Y0 = YEAR + '-01-01', q = (S.rq || '').toLowerCase();
+    const rows = DB.cars.map(c => {
+      const H = DB.history.filter(x => x.carId === c.id);
+      const ch = H.filter(x => x.type === 'change').sort((a, b) => a.date < b.date ? 1 : -1)[0];
+      const cost = H.filter(x => x.date >= Y0).reduce((a, x) => a + (x.cost ? numv(x.cost) : 0), 0);
+      const done = c.allSeason || c.mounted === TARGET, it = itemOf(c.id);
+      return { c, ch, cost, done, it };
+    });
+    const F = { all: () => true, done: r => r.done, wait: r => !r.done, trip: r => r.it };
+    const tab = S.rtab || 'all';
+    const list = rows.filter(F[tab]).filter(r => !q || [r.c.plate, r.c.model, r.c.driver, r.c.service].join(' ').toLowerCase().includes(q)).sort((a, b) => a.c.plate.localeCompare(b.c.plate));
+    const sum = list.reduce((a, r) => a + r.cost, 0);
+    let h = statGrid([
+      ['Сменени', rows.filter(r => r.done).length + '<small>/ ' + rows.length + '</small>', 'на ' + SETN[TARGET].toLowerCase() + ' или всесезонни', 'var(--ok)'],
+      ['Чакат смяна', rows.filter(r => !r.done).length + '<small>коли</small>', rows.filter(r => !r.done && r.it).length + ' от тях са в рейс', 'var(--warn)'],
+      ['Разходи ' + YEAR, Math.round(rows.reduce((a, r) => a + r.cost, 0)) + '<small>€</small>', 'за всички коли', 'var(--vio)']
+    ]);
+    h += `<input class="search" id="f_rq" placeholder="Търси по номер, модел, шофьор, сервиз…" value="${esc(S.rq || '')}" oninput="S.rq=this.value;render();$('f_rq').focus();$('f_rq').setSelectionRange(this.value.length,this.value.length)">
+      <div class="tabs">${[['all', 'Всички'], ['done', 'Сменени'], ['wait', 'Чакат'], ['trip', 'В рейс']].map(t => `<button class="${tab === t[0] ? 'on' : ''}" onclick="S.rtab='${t[0]}';render()">${t[1]}</button>`).join('')}</div>
+      <div class="mut" style="margin-bottom:8px">${list.length} ${list.length === 1 ? 'кола' : 'коли'} · разходи ${YEAR}: <b>${eur(sum)}</b></div><div class="crl">`;
+    h += list.map(({ c, ch, cost, done, it }) => {
+      const st = it ? stepBadge(it.step) : done ? '<span class="badge b-ok">✔ Сменена</span>' : '<span class="badge b-warn">Чака смяна</span>';
+      const on = c.allSeason ? '🌦️ Всесезонни' : ICO[c.mounted] + ' ' + SETN[c.mounted];
+      return `<button class="cr" onclick="openCar('${c.id}')"><span>${plateHtml(c.plate)}</span><span class="r">${cost ? eur(cost) : '—'}</span>
+        <span class="w m">${esc(c.model)} · ${on} · ${esc(c.service || '—')}</span>
+        <span class="w s">${ch ? `Смяна ${fmt(ch.date)}${ch.service ? ' · ' + esc(ch.service) : ''}${ch.km ? ' · ' + kmFmt(ch.km) : ''}` : 'Няма записана смяна'} ${st}</span></button>`;
+    }).join('') || '<div class="center">Няма коли</div>';
+    return h + `</div><button class="btn sec" style="margin-top:12px" onclick="exportCSV()">⬇ Свали за Excel (CSV)</button>`;
+  },
+
   report() {
     header('Справка', 'home');
     const tot = DB.cars.length, win = DB.cars.filter(c => c.mounted === 'winter' || c.allSeason).length;
@@ -1033,7 +1071,7 @@ const V = {
       ['Ротации ' + YEAR, hy.filter(x => x.type === 'rotate').length + '<small>бр.</small>', '', 'var(--blue)'],
       ['Разходи ' + YEAR, Math.round(costAll) + '<small>€</small>', 'средно ' + eur(costAll / tot) + ' на кола', 'var(--vio)'],
       ['Брак ' + YEAR, hy.filter(x => x.type === 'scrap').length + '<small>гуми</small>', '', 'var(--bad)']
-    ]) + `
+    ]) + `<button class="btn" style="margin-top:12px" onclick="go('carReport',{rtab:'all',rq:''})">🚗 Справка по коли (всички ${DB.cars.length})</button>
       ${budgetCard() ? '<h2>Разход за смяната</h2>' + budgetCard() : ''}
       <h2>Гуми за купуване</h2>${buyCostCard()}${orderList().length && canEdit() ? `<button class="btn" style="margin:0 0 10px" onclick="openOffer()">📨 Запитване за оферта (PDF за сервиза)</button>` : ''}${orderCard()}
       <h2>Сравнение на сервизите · ${YEAR}</h2>`;
@@ -1079,7 +1117,7 @@ const TABICO = {
   report: '<path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/>'
 };
 const TABEMO = { home: '🏠', trips: '🚚', cars: '🚗', store: '🛞', report: '📊' };
-const TABOF = { msg: 'trips', offer: 'report', editSet: 'cars', bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', tripAdd: 'trips', tripEdit: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report' };
+const TABOF = { msg: 'trips', offer: 'report', editSet: 'cars', bulkSvc: 'cars', profile: 'home', settings: 'report', newCar: 'cars', home: 'home', trips: 'trips', trip: 'trips', newTrip: 'trips', tripAdd: 'trips', tripEdit: 'trips', cars: 'cars', car: 'cars', change: 'cars', expense: 'cars', newTires: 'cars', store: 'store', addFree: 'store', assign: 'store', report: 'report', carReport: 'report' };
 function renderTabbar() {
   const openTrips = myTrips().filter(t => !tripDone(t)).length;
   const bad = DB.cars.filter(c => !isTodo(c) && issues(c).length).length;
